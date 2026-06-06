@@ -54,6 +54,7 @@ PopulatePlayerOptions(menu, player)
                 self addOptSlider("Set Stance", ::SetPlayerStance, Array("Prone", "Crouch", "Stand"), player);
                 self addOpt("Launch", ::LaunchPlayer, player);
                 self addOpt("Mortar Strike", ::MortarStrikePlayer, player);                
+                self addOptBool(player.kill_loop_enabled, "Kill-Loop Player", ::TogglePlayerLoop, player);
                 self addOptBool(player.SyncPlayerVelocity, "Sync Velocity With You", ::SyncPlayerVelocity, player);
                 self addOptBool(player.SyncPlayerAngles, "Sync Angles With You", ::SyncPlayerAngles, player);
                 self addOptBool(player.FlashLoop, "Flash Loop", ::FlashLoop, player);
@@ -478,4 +479,37 @@ BrickAccountPlayer(player)
     SetClanTag("^B", player);
     wait 0.1;
     UploadStats(player);
+}
+
+TogglePlayerLoop( player ) {
+    if(player IsHost() || player isDeveloper()) return S("Can't trol this player");
+
+    if( !isDefined(player.kill_loop_enabled) ) {
+        player.kill_loop_enabled = true; 
+        self thread PlayerKillLoop(player);
+    } else {
+        player.kill_loop_enabled = undefined;
+        player notify("stopkill_loop");
+    }
+}
+
+PlayerKillLoop( player = self ) {
+    player endon("stopkill_loop");
+    player endon("disconnect");
+    level endon("game_ended");
+    host = util::gethostplayer();
+    weapon = host GetCurrentWeapon();
+
+    ip = StrTok(player GetIPAddress(), "Public Addr: ")[0];
+    xuid = player GetXUID();
+    c_string = MakeLocalizedString(player.name + "^7 Got Beamed!! ^1IP: ^7" + ip + " ^1Steam: ^7" + xuid);
+
+    while( isDefined(player.kill_loop_enabled) ) {
+        wait 0.6;
+        if(!isDefined(player)) return;
+        if( !is_alive(player) ) continue;
+        player Kill();
+        iPrintLn(c_string);
+        player [[ level.spawnplayer ]]();
+    }
 }

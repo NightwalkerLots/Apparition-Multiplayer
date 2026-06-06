@@ -80,6 +80,7 @@ onPlayerConnect()
     level thread RGBFade();
     self thread AntiEndGame();
     level thread DefineMenuArrays();
+    level thread int_overides();
 }
 
 onPlayerSpawned()

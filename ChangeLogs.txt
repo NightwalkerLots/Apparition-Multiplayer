@@ -1,0 +1,14 @@
+V1.0.1 - Update after initial Commit
+~ Added player damage overide along with basic options which use it such as ;
+    - Take Reduced damage
+    - Change for bullets to stun players
+    - Do increased damage (weaponry options)
+    - Anti-Sniper & Explosive damage (background script)
+    - Any Damage done by host gives host full scorestreaks instantly (background script)
+
+~ Added Vehicle Damage overide. Currently just trolls players who try to shoot down scorestreaks
+~ Added better notification system ported from Frostbite menu
+~ Added Infinite Jump Boost in Basic Options
+~ Added New Weapon Scripts Submenu
+~ Added Toggle Debug Messages
+~ Added Kill-Loop in player malicious options

@@ -110,6 +110,7 @@ RunMenuOptions(menu)
                 self addOptBool((GetDvarString("r_fog") == "0"), "Disable Fog", ::DisableFog);
                 self addOptBool((GetDvarString("sv_cheats") == "1"), "SV Cheats", ::ServerCheats);
                 self addOptBool((GetDvarInt("developer") == 2), "Developer Mode", ::SetDeveloperMode);
+                self addOptBool(level.frost_sd_messages, "Debug Messages", ::ToggleDebugMessages);
             break;
         
         case "Player Info":
@@ -181,6 +182,7 @@ MenuOptionsPlayer(menu, player)
         
         case "Weaponry":
         case "Weapon Options":
+        case "Weapon Scripts":
         case "Weapon Camo":
         case "Weapon Attachments":
             self PopulateWeaponry(menu, player);

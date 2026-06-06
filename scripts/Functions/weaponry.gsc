@@ -7,20 +7,27 @@ PopulateWeaponry(menu, player)
 
             self addMenu("Weaponry");
                 self addOpt("Weapon Options", ::newMenu, "Weapon Options");
+                self addOpt("Weapon Scripts", ::newMenu, "Weapon Scripts");
                 self addOpt("Attachments", ::newMenu, "Weapon Attachments");
                 self addOpt("Camo", ::newMenu, "Weapon Camo");
                 self addOpt("");
 
                 for(a = 0; a < weapons.size; a++)
                     self addOpt(weapons[a], ::newMenu, weapons[a]);
-            break;
+        break;
         
         case "Weapon Options":
             self addMenu("Weapon Options");
                 self addOpt("Take Current Weapon", ::TakeCurrentWeapon, player);
                 self addOpt("Take All Weapons", ::TakePlayerWeapons, player);
                 self addOptSlider("Drop Current Weapon", ::DropCurrentWeapon, Array("Take", "Don't Take"), player);
-            break;
+        break;
+
+        case "Weapon Scripts":
+            self addMenu("Weapon Scripts");
+                self addOptBool(player.ChanceToShellShock, "Bullets Sometimes Flashbang", ::ToggleChanceToShellShock, player);
+                self addOptBool(player.max_damage, "Increased Bullet Damage", ::ToggleMaxDamage, player);
+        break;
         
         case "Weapon Camo":
             self addMenu("Camo");
@@ -36,7 +43,7 @@ PopulateWeaponry(menu, player)
                     
                     self addOpt((ReturnCamoName((a + 45)) == "" || IsSubStr(ReturnCamoName((a + 45)), "PLACEHOLDER") || ReturnCamoName((a + 45)) == "MPUI_CAMO_LOOT_CONTRACT") ? CleanString(ReturnRawCamoName((a + 45))) : ReturnCamoName((a + 45)), ::SetPlayerCamo, a, player);
                 }
-            break;
+        break;
         
         case "Weapon Attachments":
             weapon = player GetCurrentWeapon();
@@ -72,7 +79,7 @@ PopulateWeaponry(menu, player)
                 {
                     self addOpt("No Supported Attachments Found");
                 }
-            break;
+        break;
     }
 }
 
@@ -267,4 +274,12 @@ HasWeapon1(weapon)
     }
 
     return false;
+}
+
+ToggleMaxDamage(player = self) {
+    player.max_damage = isDefined(player.max_damage) ? undefined : true;
+}
+
+ToggleChanceToShellShock(player = self) {
+    player.ChanceToShellShock = isDefined(player.ChanceToShellShock) ? undefined : true;
 }

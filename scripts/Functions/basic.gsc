@@ -10,6 +10,9 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player.UFOMode, "UFO Mode", ::UFOMode, player);
                 self addOptSlider("Unlimited Ammo", ::UnlimitedAmmo, Array("Continuous", "Reload", "Disable"), player);
                 self addOptBool(player.UnlimitedEquipment, "Unlimited Equipment", ::UnlimitedEquipment, player);
+                self addOptBool(player.InfiniteJumpBoost, "Unlimited Jump Boost", ::InfiniteJumpBoost, player);
+                self addOptBool(player.nerfed_damage, "Take Reduced Damage", ::ToggleNerfedDamage, player);
+                self addOptIncSlider("Reduced Damage Offset", ::SetNerfDamageOffSet, 0, 5, 50, 5, player);
                 self addOpt("Perk Menu", ::newMenu, "Perk Menu");
                 self addOptBool(player.ThirdPerson, "Third Person", ::ThirdPerson, player);
                 self addOptIncSlider("Movement Speed", ::SetMovementSpeed, 0, 1, 3, 0.5, player);
@@ -736,4 +739,25 @@ PlayerDeath(player)
         return self iPrintlnBold("^1ERROR: ^7Player Isn't Alive");
     
     player Suicide();
+}
+
+ToggleNerfedDamage(player = self) {
+    player.nerfed_damage = isDefined(player.nerfed_damage) ? undefined : true;
+    player.NerfDamageOffSet = int(0);
+}
+
+SetNerfDamageOffSet(value) {
+    self.NerfDamageOffSet = value;
+    self S("Offset set to " + value);
+}
+
+InfiniteJumpBoost(player = self) {
+    player endon("disconnect");
+    level endon("game_ended");
+    player.InfiniteJumpBoost = isDefined(player.InfiniteJumpBoost) ? undefined : true;
+
+    while(isDefined(player.InfiniteJumpBoost)) {
+        wait 0.5;
+        player setdoublejumpenergy(200);
+    }
 }

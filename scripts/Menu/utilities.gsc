@@ -160,6 +160,102 @@ createWaypoint(origin, shader = "damage_feedback_glow_orange", color = (1, 1, 1)
     return uiElement;
 }
 
+SD(text) {
+    host = util::gethostplayer();
+    if( isDefined(level.frost_sd_messages) ) {
+        host iPrintLnBold( "^1DEBUG^7: " + text);
+    }
+}
+
+ToggleDebugMessages() {
+    level.frost_sd_messages = isDefined(level.frost_sd_messages) ? undefined : true;
+}
+
+S(Message, player = self)
+{
+    if( !isplayer(self) ) { //Script ran via server and not threaded on a player
+        name = "^5SYSTEM ^7:";
+    } else {
+        name = player.name;
+    }
+    
+    host = util::gethostplayer();
+    text = ( name + " ^7" + message );
+
+    if( self IsHost() ) { 
+        host thread HostHintText(text, 6, undefined, undefined, undefined, false);
+    }
+
+    else { self iPrintLnBold(Message); }
+}
+
+HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80, rainbow = false ) {
+    saved_message = text;
+    if( !isDefined(self.notifications["count"]) ) self.notifications["count"] = int(0);
+    i = self.notifications["text"].size;
+    if( isDefined( self.notifications["text"] ) ) {
+        self.notifications_adding = 1;
+        foreach( ui in self.notifications["text"] ) {
+            ui MoveOverTime(0.5);
+            ui.y = ui.y - 11;
+        }
+    } else {
+        i = 0; 
+    }
+    text = self createText("default", font_scale, 1, " ", "TOPLEFT", "MIDDLE", xpos, ypos, 1, ( 1, 1, 1 ));
+    text SetTextString(saved_message);
+    self.notifications["text"][i] = text;
+    self.notifications["count"]++;
+    if( rainbow == true ) {
+        for( i = 0; i <= 10; i++ ) {
+            r = RandomIntRange(1, 255);
+            g = RandomIntRange(1, 255);
+            b = RandomIntRange(1, 255);
+            text ChangeColor( rgb( r, g, b ) );
+            wait 0.3;
+            if( i >= 10 ) {
+                thread AutoDelHud( text, 9 );
+                wait Float(0.7);
+                self.notifications_adding = 0; // allows next message in queue to play
+                self.notifications_queue = int(self.notifications_queue) - 1;
+                return;
+            }
+        }
+    }
+    thread AutoDelHud( self.notifications["text"][i], 9 );
+    wait Float(0.7);
+    self.notifications_adding = 0; // allows next message in queue to play
+    self.notifications_queue = int(self.notifications_queue) - 1;
+    //iPrintLnBold(i);
+}
+
+AutoDelHud( elm, time = 5 ) {
+    self endon("frost_host_notivs_destroyed");
+    wait time;
+    elm FadeOverTime(1);
+    elm.alpha = 0;
+    wait 2;
+    elm DestroyHud();
+    SD("Notiv Count : " + self.notifications["count"]);
+    if( self.notifications["count"] > 0 ) self.notifications["count"]--;
+    if( self.notifications["count"] == 0 ) {
+        self.notifications["text"] = undefined;
+        SD("notification queue gone");
+    }
+}
+
+rgb(r, g, b)
+{
+    return (r/255, g/255, b/255);
+}
+
+ChangeColor(color)
+{
+    self FadeOverTime(.3);
+    color FadeOverTime(.3);
+    self.color = color;
+}
+
 GetColorVec(color)
 {
     colors = Array(0, 0, 0);
@@ -1955,4 +2051,49 @@ GetEnemyTeam()
         return;
     
     return (self.pers["team"] == "allies") ? "axis" : "allies";
+}
+
+ApplyShellShockHarsh( duration = 15, attacker ) {
+    chance = RandomIntRange(0, 20);
+    if( chance != int(3) ) return;
+    attacker iPrintLnBold("Target Flashed");
+    self Shellshock("flashbang", duration, 0);
+    self ShellShock("concussion_grenade_mp", duration, 0);
+    self.flashendtime = gettime() + (self.flashduration * 1000);
+	self.lastflashedby = attacker;
+
+    flashsound = spawn("script_origin", (0, 0, 1));
+	flashsound.origin = self.origin;
+	flashsound linkto(self);
+	flashsound thread deleteentonownerdeath(self);
+	flashsound playsound(level.sound_flash_start);
+	flashsound playloopsound(level.sound_flash_loop);
+	if(duration > 0.5)
+	{
+		wait(duration - 0.5);
+	}
+	flashsound playsound(level.sound_flash_start);
+	flashsound stoploopsound(0.5);
+	wait(0.5);
+	flashsound notify("delete");
+	flashsound delete();
+}
+
+deleteentonownerdeath(owner)
+{
+	self endon("delete");
+	owner waittill("death");
+	self delete();
+}
+
+ThreadedDoDamage(eattacker) {
+    eattacker DoDamage(10, eattacker.origin, eattacker, eattacker);
+}
+
+IsExplosiveDamage( mod ) {
+    if( loadout::isexplosivedamage(mod) ) return true;
+    if( mod == "MOD_PROJECTILE" ) return true;
+    if(mod == "MOD_GRENADE" || mod == "MOD_GRENADE_SPLASH" || mod == "MOD_EXPLOSIVE" || mod == "MOD_EXPLOSIVE_SPLASH" || mod == "MOD_PROJECTILE" || mod == "MOD_PROJECTILE_SPLASH") return true;
+
+    return false;
 }
