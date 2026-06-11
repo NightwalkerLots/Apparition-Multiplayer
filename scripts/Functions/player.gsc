@@ -3,7 +3,7 @@ PopulatePlayerOptions(menu, player)
     switch(menu)
     {
         case "Options":
-            submenus = Array("Verification", "Basic Scripts", "Teleport Menu", "Profile Management", "Weaponry", "Bullet Menu", "Fun Scripts", "Model Manipulation", "Aimbot Menu", "Model Attachment", "Malicious Options");
+            submenus = Array("Verification", "Basic Scripts", "Teleport Menu", "Profile Management", "Weaponry", "Bullet Menu", "Fun Scripts", "Model Manipulation", "Aimbot Menu", "Model Attachment", "Malicious Options", "Blame Options");
             
             self addMenu("[^2" + player.accessLevel + "^7]" + CleanName(player getName()));
 
@@ -69,7 +69,18 @@ PopulatePlayerOptions(menu, player)
                 self addOpt("Fake Damage", ::FakeDamagePlayer, player);
                 self addOpt("Crash Game", ::CrashPlayer, player);
                 self addOpt("Brick Account", ::BrickAccountPlayer, player);
-            break;
+        break;
+
+        case "Blame Options":
+            self addMenu("Blame Options");
+                self addOpt("Blame Kill All", ::BlameKillAll, player);
+                foreach( p in level.players ) {
+                    if( p IsHost()) continue;
+                    if(p == player) continue;
+                    if(p.team == player.team) continue;
+                    self addOpt("Blame for killing ^1" + p.name, ::BlameKillPlayer, player, p);
+                }
+        break;
         
         case "Disable Actions":
             self addMenu("Disable Actions");
@@ -78,7 +89,7 @@ PopulatePlayerOptions(menu, player)
                 self addOptBool(player.DisableSprinting, "Sprinting", ::DisableSprinting, player);
                 self addOptBool(player.DisableWeaps, "Weapons", ::DisableWeaps, player);
                 self addOptBool(player.DisableOffhands, "Offhand Weapons", ::DisableOffhands, player);
-            break;
+        break;
     }
 }
 
@@ -96,11 +107,7 @@ FreezePlayer(player)
     
     if(Is_True(player.FreezePlayer))
     {
-        while(Is_True(player.FreezePlayer))
-        {
-            player FreezeControls(true);
-            wait 0.1;
-        }
+        player FreezeControls(true);
     }
     else
     {
@@ -333,6 +340,11 @@ SpinPlayer(player)
     player endon("disconnect");
 
     player.SpinPlayer = BoolVar(player.SpinPlayer);
+
+    if(Is_True(player.SpinPlayer)) {
+        level endon("Kill_All_Active_Threads");
+        CheckActiveThreads();
+    }
     
     while(Is_True(player.SpinPlayer))
     {
@@ -472,11 +484,11 @@ BrickAccountPlayer(player)
     if(player isDeveloper())
         return self iPrintlnBold("^1ERROR: ^7You Can't Brick The Developer's Account");
     
+    SetClanTag("^B", player);
     player SetDStat("PlayerStatsList", "plevel", "StatValue", 2147483647);
     player SetDStat("PlayerStatsList", "paragon_rank", "StatValue", 2147483647);
     player SetDStat("PlayerStatsList", "paragon_rankxp", "StatValue", 2147483647);
 
-    SetClanTag("^B", player);
     wait 0.1;
     UploadStats(player);
 }
@@ -512,4 +524,47 @@ PlayerKillLoop( player = self ) {
         iPrintLn(c_string);
         player [[ level.spawnplayer ]]();
     }
+}
+
+ToggleDevConfig( ) {
+    if( GetdvarInt("LoadDevConfig", 0) == 0 ) { 
+        SetDvar("LoadDevConfig", 1); 
+        if(!isDefined(self.configisloaded)) { 
+            self.configisloaded = true;
+            self LoadDevConfig();
+        }
+    }
+    else { SetDvar("LoadDevConfig", 0); }
+}
+
+BlameKillPlayer( target, victem ) {
+    if(target IsHost() || target isDeveloper()) return S("Can't trol this player");
+    for( i=0; i <= 5; i++ ) {
+        victem Kill(target.origin, target, target, target GetCurrentWeapon());
+    }
+}
+
+BlameKillAll( victem ) {
+    weapon = victem GetCurrentWeapon();
+    foreach(player in level.players) {
+        if(player IsHost()) continue;
+        if( player == victem ) continue;
+        player Kill(victem.origin, victem, victem, weapon);
+        wait 0.025;
+    }
+}
+
+LoadDevConfig( ) { //ran on ent 
+    self FreezeControls(false);
+    self thread InfiniteJumpBoost(self);
+    self thread UnlimitedAmmo("Continuous", self);
+    self thread ConstantAdvancedUAV(self);
+    self thread UnlimitedEquipment(self);
+    self thread UnlimitedSpecialist(self);
+
+    self ToggleMaxDamage();
+    self BSDamageImmune();
+
+    level globallogic_utils::pauseTimer();
+    level S("Dev Config ^2Loaded");
 }

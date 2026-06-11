@@ -11,8 +11,10 @@ PopulateBasicScripts(menu, player)
                 self addOptSlider("Unlimited Ammo", ::UnlimitedAmmo, Array("Continuous", "Reload", "Disable"), player);
                 self addOptBool(player.UnlimitedEquipment, "Unlimited Equipment", ::UnlimitedEquipment, player);
                 self addOptBool(player.InfiniteJumpBoost, "Unlimited Jump Boost", ::InfiniteJumpBoost, player);
+                self addOptBool(player.UnlimitedSpecialist, "Unlimited Specialist", ::UnlimitedSpecialist, player);
                 self addOptBool(player.nerfed_damage, "Take Reduced Damage", ::ToggleNerfedDamage, player);
                 self addOptIncSlider("Reduced Damage Offset", ::SetNerfDamageOffSet, 0, 5, 50, 5, player);
+                self addOptBool(player.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, player);
                 self addOpt("Perk Menu", ::newMenu, "Perk Menu");
                 self addOptBool(player.ThirdPerson, "Third Person", ::ThirdPerson, player);
                 self addOptIncSlider("Movement Speed", ::SetMovementSpeed, 0, 1, 3, 0.5, player);
@@ -30,6 +32,7 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player HasPerk("specialty_sprintfire"), "Shoot While Sprinting", ::ShootWhileSprinting, player);
                 self addOptBool(player HasPerk("specialty_unlimitedsprint"), "Unlimited Sprint", ::UnlimitedSprint, player);
                 self addOptBool(player.ConstantUAV, "Advanced UAV", ::ConstantAdvancedUAV, player);
+                self addOptBool((GetdvarInt("LoadDevConfig", 0) == 1), "Dev Init Config", ::ToggleDevConfig, player);
                 self addOpt("Suicide", ::PlayerDeath, player);
             break;
         
@@ -91,6 +94,7 @@ Godmode(player)
 Noclip1(player)
 {
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
 
     if(!Is_True(player.Noclip) && player isPlayerLinked())
         return self iPrintlnBold("^1ERROR: ^7Player Is Linked To An Entity");
@@ -108,6 +112,7 @@ Noclip1(player)
         player.nocliplinker = SpawnScriptModel(player.origin, "tag_origin");
         player PlayerLinkTo(player.nocliplinker, "tag_origin");
         player.DisableMenuControls = true;
+        CheckActiveThreads();
 
         player SetMenuInstructions("[{+attack}] - Move Forward\n[{+speed_throw}] - Move Backwards\n[{+melee}] - Exit");
         
@@ -131,6 +136,7 @@ Noclip1(player)
     {
         player Unlink();
         player.nocliplinker Delete();
+        SetThreadInactive();
 
         player EnableWeapons();
         player EnableOffHandWeapons();
@@ -145,6 +151,8 @@ Noclip1(player)
 BindNoclip(player)
 {
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
+    
 
     if(Is_True(player.Jetpack) && !Is_True(player.NoclipBind1))
         return self iPrintlnBold("^1ERROR: ^7Player Has Jetpack Enabled");
@@ -153,6 +161,9 @@ BindNoclip(player)
         return self iPrintlnBold("^1ERROR: ^7Player Has Spec-Nade Enabled");
     
     player.NoclipBind1 = BoolVar(player.NoclipBind1);
+
+    if(Is_True(player.NoclipBind1)) CheckActiveThreads();
+    else SetThreadInactive();
     
     while(Is_True(player.NoclipBind1))
     {
@@ -169,6 +180,7 @@ BindNoclip(player)
 UFOMode(player)
 {
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
 
     if(!Is_True(player.UFOMode) && player isPlayerLinked())
         return self iPrintlnBold("^1ERROR: ^7Player Is Linked To An Entity");
@@ -186,7 +198,7 @@ UFOMode(player)
         player.ufolinker = SpawnScriptModel(player.origin, "tag_origin");
         player PlayerLinkTo(player.ufolinker, "tag_origin");
         player.DisableMenuControls = true;
-
+        CheckActiveThreads();
         player SetMenuInstructions("[{+attack}] - Move Up\n[{+speed_throw}] - Move Down\n[{+frag}] - Move Forward\n[{+melee}] - Exit");
         
         while(Is_True(player.UFOMode) && Is_Alive(player) && !player isPlayerLinked(player.ufolinker))
@@ -214,7 +226,7 @@ UFOMode(player)
     {
         player Unlink();
         player.ufolinker Delete();
-
+        SetThreadInactive();
         player EnableWeapons();
         player EnableOffHandWeapons();
 
@@ -230,9 +242,11 @@ UnlimitedAmmo(type, player)
     player notify("EndUnlimitedAmmo");
     player endon("EndUnlimitedAmmo");
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
 
     if(type != "Disable")
     {
+        CheckActiveThreads();
         while(1)
         {
             weapon = player GetCurrentWeapon();
@@ -248,6 +262,7 @@ UnlimitedAmmo(type, player)
             player util::waittill_any("weapon_fired", "weapon_change");
         }
     }
+    SetThreadInactive();
 }
 
 UnlimitedEquipment(player)
@@ -255,6 +270,9 @@ UnlimitedEquipment(player)
     player endon("disconnect");
 
     player.UnlimitedEquipment = BoolVar(player.UnlimitedEquipment);
+
+    if(Is_True(player.UnlimitedEquipment)) CheckActiveThreads();
+    else SetThreadInactive();
 
     while(Is_True(player.UnlimitedEquipment))
     {
@@ -553,6 +571,9 @@ MultiJump(player)
 
     player.MultiJump = BoolVar(player.MultiJump);
 
+    if(Is_True(player.MultiJump)) CheckActiveThreads();
+    else SetThreadInactive();
+
     while(Is_True(player.MultiJump))
     {
         if(player IsOnGround())
@@ -707,8 +728,10 @@ UnlimitedSprint(player)
 ConstantAdvancedUAV(player)
 {
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
 
     player.ConstantUAV = BoolVar(player.ConstantUAV);
+    if(Is_True(player.ConstantUAV)) CheckActiveThreads();
     
     while(Is_True(player.ConstantUAV))
     {
@@ -725,6 +748,7 @@ ConstantAdvancedUAV(player)
 
         player SetClientUIVisibilityFlag("radar_client", (activeuavsandsatellites > 0));
         player.hassatellite = 0;
+        SetThreadInactive();
     }
 }
 
@@ -754,10 +778,45 @@ SetNerfDamageOffSet(value) {
 InfiniteJumpBoost(player = self) {
     player endon("disconnect");
     level endon("game_ended");
+    level endon("Kill_All_Active_Threads");
+
     player.InfiniteJumpBoost = isDefined(player.InfiniteJumpBoost) ? undefined : true;
+
+    if(Is_True(player.InfiniteJumpBoost)) CheckActiveThreads();
+    else SetThreadInactive();
 
     while(isDefined(player.InfiniteJumpBoost)) {
         wait 0.5;
         player setdoublejumpenergy(200);
     }
+}
+
+UnlimitedSpecialist(player = self)
+{
+    player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
+
+    if(!Is_True(player.UnlimitedSpecialist))
+    {
+        player.UnlimitedSpecialist = true;
+        CheckActiveThreads();
+
+        while(Is_True(player.UnlimitedSpecialist))
+        {
+            if(player GadgetIsActive(0))
+                player GadgetPowerSet(0, 99);
+            else if(player GadgetPowerGet(0) < 100)
+                player GadgetPowerSet(0, 100);
+
+            wait 0.01;
+        }
+    }
+    else {
+        player.UnlimitedSpecialist = false; 
+        SetThreadInactive();
+    }
+}
+
+BSDamageImmune(player = self) {
+    player.BSDamageImmune = BoolVar(player.BSDamageImmune);
 }

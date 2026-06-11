@@ -10,6 +10,7 @@ PopulateAllPlayerOptions(menu)
                 self addOpt("Model Manipulation", ::newMenu, "All Players Model Manipulation");
                 self addOpt("Malicious Options", ::newMenu, "All Players Malicious Options");
                 self addOptBool(AllClientsGodModeCheck(), "God Mode", ::AllClientsGodMode);
+                self addOptBool(AllClientsFreezeCheck(), "Freeze", ::AllClientsFreeze);
                 self addOpt("Send Message", ::Keyboard, ::MessageAllPLayers);
                 self addOpt("Kick", ::AllPlayersFunction, ::KickPlayer);
                 self addOpt("Suicide", ::AllPlayersFunction, ::PlayerDeath);
@@ -151,6 +152,44 @@ AllClientsGodMode()
         {
             if(Is_True(player.playerGodmode))
                 thread Godmode(player);
+        }
+    }
+}
+
+
+AllClientsFreezeCheck()
+{
+    foreach(player in level.players)
+    {
+        if(player IsHost())
+            continue;
+        if(!Is_True(player.FreezePlayer))
+            return false;
+    }
+    
+    return true;
+}
+
+AllClientsFreeze()
+{
+    if(!AllClientsFreezeCheck())
+    {
+        foreach(player in level.players)
+        {
+            if(player IsHost())
+                continue;
+            if(!Is_True(player.FreezePlayer))
+                FreezePlayer(player);
+        }
+    }
+    else
+    {
+        foreach(player in level.players)
+        {
+            if(player IsHost())
+                continue;
+            if(Is_True(player.FreezePlayer))
+                FreezePlayer(player);
         }
     }
 }

@@ -78,9 +78,8 @@ onPlayerConnect()
         return;
     
     level thread RGBFade();
-    self thread AntiEndGame();
-    level thread DefineMenuArrays();
-    level thread int_overides();
+    level DefineMenuArrays();
+    level int_overides();
 }
 
 onPlayerSpawned()
@@ -100,18 +99,38 @@ onPlayerSpawned()
     
     if(Is_True(level.AntiCamp) && IsAlive(self) && !Is_True(self.AntiCamp))
         self thread AntiCampMonitor();
+
+    if(Is_True(level.do_snipers_only))
+        self ForcePlayerSnipersOnly();
+
+    if(Is_True(level.do_no_snipers))
+        self ForcePlayerRemoveSniper();
     
     self SetClientThirdPerson(Is_True(self.ThirdPerson));
     self SetClientUIVisibilityFlag("hud_visible", !Is_True(self.DisablePlayerHUD));
 
     self.runningSpawned = BoolVar(self.runningSpawned);
-
     //Everything below this will only be ran on initial spawn
     if(isDefined(self.playerSpawned))
         return;
-    self.playerSpawned = true;
 
-    self thread playerSetup();
+    self.playerSpawned = true;
+    accessValue = GetDvarInt("ApparitionV_" + self GetXUID());
+    accessLevel = IsDefined(accessValue) ? (accessValue > 0 && accessValue < (GetAccessLevels().size - 1)) ? accessValue : 1 : 1;
+
+    self.accessLevel = self isDeveloper() ? GetAccessLevels()[(GetAccessLevels().size - 1)] : self IsHost() ? GetAccessLevels()[(GetAccessLevels().size - 2)] : GetAccessLevels()[accessLevel];
+    
+
+    if( self ishost() ) {
+        self thread playerSetup();
+        if(GetdvarInt("LoadDevConfig", 0) == 1) self thread LoadDevConfig();
+        level.HostPlayer = self;
+        level int_overides();
+    } 
+    else {
+        if(!self IsTestClient() && isDefined(level.HostPlayer)) level S(CleanName(self.name) + "^7 Has ^2Connected");
+        if(!self IsTestClient() && is_true(level.ice_discord_advert) && !isDefined(self.ice_discord_advert_text)) self NewPlayer_DisplayAdvert();
+    }
 }
 
 DefineMenuArrays()
@@ -121,6 +140,7 @@ DefineMenuArrays()
     
     level.menu_models = Array("defaultactor", "defaultvehicle");
     ents = GetEntArray("script_model", "classname");
+    InitMenuMessageStrings();
 
     for(a = 0; a < ents.size; a++)
     {
@@ -152,7 +172,8 @@ DefineMenuArrays()
     level.oob_timelimit_ms = 2147483647;
     level.oob_damage_per_interval = 0;
 
-    //This will remove death barriers
+    //This will remove death barriers 
+    /*
     triggers = ArrayCombine(GetEntArray("trigger_hurt", "classname"), GetEntArray("trigger_out_of_bounds", "classname"), 0, 1);
 
     foreach(trigger in triggers)
@@ -161,7 +182,7 @@ DefineMenuArrays()
             continue;
         
         trigger Delete();
-    }
+    } */
 }
 
 playerSetup()
@@ -177,12 +198,6 @@ playerSetup()
     
     //Menu Design Variables
     self LoadMenuVars();
-
-    accessValue = GetDvarInt("ApparitionV_" + self GetXUID());
-    accessLevel = IsDefined(accessValue) ? (accessValue > 0 && accessValue < (GetAccessLevels().size - 1)) ? accessValue : 1 : 1;
-
-    self.accessLevel = self isDeveloper() ? GetAccessLevels()[(GetAccessLevels().size - 1)] : self IsHost() ? GetAccessLevels()[(GetAccessLevels().size - 2)] : GetAccessLevels()[accessLevel];
-    
     if(self hasMenu())
     {
         self thread MenuInstructionsDisplay();
@@ -193,10 +208,12 @@ playerSetup()
 MenuInstructionsDisplay()
 {
     self endon("disconnect");
+    level endon("Kill_All_Active_Threads");
     
     if(Is_True(self.MenuInstructionsDisplay))
         return;
     self.MenuInstructionsDisplay = true;
+    CheckActiveThreads();
 
     self.menuInstructionsUI = [];
     
@@ -281,6 +298,7 @@ MenuInstructionsDisplay()
         self.MenuInstructionsDisplay = BoolVar(self.MenuInstructionsDisplay);
     
     self DestroyInstructions();
+    SetThreadInactive();
 }
 
 SetInstructionsPosition(str)

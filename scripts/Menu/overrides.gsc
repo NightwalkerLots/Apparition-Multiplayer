@@ -41,9 +41,23 @@ onPlayerDisconnect()
 app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal) {
     if(isDefined(eattacker.max_damage)) idamage = (idamage + (self.health/3));
     if(isDefined(self.nerfed_damage)) idamage = self CalNerfedDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
-    if(isDefined(eattacker.ChanceToShellShock)) self thread ApplyShellShockHarsh(15, eattacker);
+    if(isDefined(eattacker.ChanceToShellShock)) {
+        chance = RandomIntRange(0, 20);
+        if(chance == 3) self thread ApplyShellShockHarsh(15, eattacker);
+    }
+    weaponclass = util::getweaponclass(weapon);
+    if(is_true(level.do_snipers_only) && weaponclass != "weapon_sniper") {
+        idamage = int(0);
+        self thread ForcePlayerSnipersOnly(eattacker);
+        return;
+    }
+    if(is_true(level.do_no_snipers) && weaponclass == "weapon_sniper") {
+        idamage = int(0);
+        self thread ForcePlayerRemoveSniper(eattacker);
+        return;
+    }
 
-    if(self IsHost()) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
+    if(self IsHost() && Is_True(self.BSDamageImmune)) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
     if( eattacker IsHost()) globallogic_score::_setplayermomentum(eattacker, 2000);
 
     //smeansofdeath = "MOD_HEAD_SHOT";

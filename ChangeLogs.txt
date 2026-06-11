@@ -12,3 +12,19 @@ V1.0.1 - Update after initial Commit
 ~ Added New Weapon Scripts Submenu
 ~ Added Toggle Debug Messages
 ~ Added Kill-Loop in player malicious options
+
+V1.0.2
+~ Added hard Cut Off for Host Notifications to be at 5 for hud limits
+~ Added Notification when someone joins the game
+~ Added Personal Dev Config Toggle
+~ Added Unlimited Specialist in basic options
+~ Added Rate Limiting for Threaded Functions to attempt to fix overflows
+~ Removed Anti-EndGame for creating a thread for each player
+~ Made init process more optimized
+~ Fixed Overides sometimes not loading
+~ Completely Recoded the Message Options 
+~ Added "Snipers Only" & "No Snipers" to server options
+~ Removed code that deleted death barriers
+~ Made the Anti-BS code togglable from basic menu
+~ Added Freeze in all players menu
+~ Added Blame Kill options in player menu

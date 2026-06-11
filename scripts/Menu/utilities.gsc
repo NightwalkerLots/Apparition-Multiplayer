@@ -190,6 +190,7 @@ S(Message, player = self)
 }
 
 HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80, rainbow = false ) {
+    CheckActiveThreads();
     saved_message = text;
     if( !isDefined(self.notifications["count"]) ) self.notifications["count"] = int(0);
     i = self.notifications["text"].size;
@@ -222,16 +223,20 @@ HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80,
             }
         }
     }
-    thread AutoDelHud( self.notifications["text"][i], 9 );
+    self thread AutoDelHud( self.notifications["text"][i], 9 );
     wait Float(0.7);
     self.notifications_adding = 0; // allows next message in queue to play
     self.notifications_queue = int(self.notifications_queue) - 1;
     //iPrintLnBold(i);
+    SetThreadInactive();
 }
 
 AutoDelHud( elm, time = 5 ) {
     self endon("frost_host_notivs_destroyed");
-    wait time;
+    level endon("Kill_All_Active_Threads");
+    CheckActiveThreads();
+    if( self.notifications["count"] >= 5 ) self ForceDelHudElm();
+    elm util::waittill_any_timeout(time, "elm_force_deleted");
     elm FadeOverTime(1);
     elm.alpha = 0;
     wait 2;
@@ -242,6 +247,13 @@ AutoDelHud( elm, time = 5 ) {
         self.notifications["text"] = undefined;
         SD("notification queue gone");
     }
+    SetThreadInactive();
+}
+
+ForceDelHudElm() {
+    key = self.notifications["text"].size - 5;
+    elm = self.notifications["text"][key];
+    elm notify("elm_force_deleted");
 }
 
 rgb(r, g, b)
@@ -331,7 +343,7 @@ AddToStringCache(text)
 
     if(Is_True(IsUniqueString))
     {
-        if(level.uniqueStringCount >= 1450)
+        if(level.uniqueStringCount >= 1199)
         {
             text = "UNIQUE STRING LIMIT REACHED";
 
@@ -517,9 +529,11 @@ HudRGBFade()
     if(!IsDefined(self) || Is_True(self.RGBFade))
         return;
     self.RGBFade = true;
+    CheckActiveThreads();
 
     self endon("death");
     level endon("stop_intermission"); //For custom end game hud
+    level endon("Kill_All_Active_Threads");
 
     while(IsDefined(self) && Is_True(self.RGBFade))
     {
@@ -1211,11 +1225,13 @@ NumberPad(func, player, param)
 
 RGBFade()
 {
+    level endon("Kill_All_Active_Threads");
     if(IsDefined(level.RGBFadeColor))
         return;
 
     hue = RandomFloatRange(0, 1);
     value = 0.95;
+    CheckActiveThreads();
 
     while(1)
     {
@@ -1648,71 +1664,6 @@ SetDeveloperMode()
     SetDvar("developer", (IsDefined(value) && value == 0 || !IsDefined(value)) ? 2 : 0);
 }
 
-AntiEndGame()
-{
-    level.AntiEndGame = BoolVar(level.AntiEndGame);
-
-    if(Is_True(level.AntiEndGame))
-    {
-        foreach(player in level.players)
-        {
-            if(Is_True(player.AntiEndGameHandler))
-                continue;
-            
-            player.AntiEndGameHandler = true;
-            player thread WatchForEndRound();
-        }
-    }
-    else
-    {
-        level notify("EndAntiEndGame");
-
-        level.hostforcedend = false;
-        level.forcedend = false;
-        level.gameended = false;
-
-        foreach(player in level.players)
-        {
-            if(Is_True(player.AntiEndGameHandler))
-                player.AntiEndGameHandler = BoolVar(player.AntiEndGameHandler);
-        }
-    }
-}
-
-WatchForEndRound()
-{
-    self endon("disconnect");
-    level endon("EndAntiEndGame");
-
-    while(Is_True(level.AntiEndGame))
-    {
-        if(Is_True(level.hostforcedend))
-            level.hostforcedend = false;
-        
-        if(Is_True(level.forcedend))
-            level.forcedend = false;
-        
-        if(Is_True(level.gameended))
-            level.gameended = false;
-
-        self waittill("menuresponse", menu, response);
-
-        if(response != "endround")
-            continue;
-        
-        if(self IsHost())
-            break;
-
-        level.hostforcedend = true;
-        level.forcedend = true;
-        level.gameended = true;
-
-        self iPrintlnBold("^1" + ToUpper(GetMenuName()) + ": ^7Blocked End Game Response");
-        bot::get_host_player() DebugiPrint("^1" + ToUpper(GetMenuName()) + ": ^2" + CleanName(self getName()) + " ^7Tried To End The Game");
-        wait 0.5; //buffer
-    }
-}
-
 ShowOrigin()
 {
     self.ShowOrigin = BoolVar(self.ShowOrigin);
@@ -2054,8 +2005,6 @@ GetEnemyTeam()
 }
 
 ApplyShellShockHarsh( duration = 15, attacker ) {
-    chance = RandomIntRange(0, 20);
-    if( chance != int(3) ) return;
     attacker iPrintLnBold("Target Flashed");
     self Shellshock("flashbang", duration, 0);
     self ShellShock("concussion_grenade_mp", duration, 0);
@@ -2090,10 +2039,32 @@ ThreadedDoDamage(eattacker) {
     eattacker DoDamage(10, eattacker.origin, eattacker, eattacker);
 }
 
-IsExplosiveDamage( mod ) {
+IsExplosiveDamage( mod ) { 
     if( loadout::isexplosivedamage(mod) ) return true;
     if( mod == "MOD_PROJECTILE" ) return true;
     if(mod == "MOD_GRENADE" || mod == "MOD_GRENADE_SPLASH" || mod == "MOD_EXPLOSIVE" || mod == "MOD_EXPLOSIVE_SPLASH" || mod == "MOD_PROJECTILE" || mod == "MOD_PROJECTILE_SPLASH") return true;
 
     return false;
+}
+
+SetThreadInactive() {
+    if( !isDefined(level.app_active_threads) ) level.app_active_threads = int(0);
+    if( level.app_active_threads > 0 ) level.app_active_threads--;
+    SD("Thread Removed");
+}
+
+CheckActiveThreads() { //level endon("Kill_All_Active_Threads");
+    if( !isDefined(level.app_active_threads) ) level.app_active_threads = int(0);
+    level.app_active_threads++;
+
+    if( level.app_active_threads >= 15 ) {
+        level notify("Kill_All_Active_Threads");
+        level.app_active_threads = int(0);
+        level.HostPlayer iPrintLnBold("^1!^7 Thread Overflow Prevented ^1!^7");
+
+        foreach( ui in self.notifications["text"] ) {
+            ui DestroyHud();
+        }
+        self.notifications["text"] = undefined;
+    }
 }

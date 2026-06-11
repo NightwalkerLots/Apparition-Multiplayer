@@ -4,6 +4,8 @@ PopulateServerModifications(menu)
     {
         case "Server Modifications":
             self addMenu("Server Modifications");
+                self addOptBool(level.do_snipers_only, "Snipers Only", ::ToggleSnipersOnly);
+                self addOptBool(level.do_no_snipers, "Disable Snipers", ::ToggleNoSnipers);
                 self addOptBool(level.SuperJump, "Super Jump", ::SuperJump);
                 self addOptBool((GetDvarInt("bg_gravity") == 200), "Low Gravity", ::LowGravity);
                 self addOptBool((GetDvarString("g_speed") == "500"), "Super Speed", ::SuperSpeed);
@@ -452,4 +454,60 @@ ServerRestart()
         Map(level.script);
     else
         MissionFailed();
+}
+
+ToggleSnipersOnly(player = self) {
+    if(Is_True(level.do_no_snipers)) return level S("Turn Off Anti-Snipers first");
+    level.do_snipers_only = BoolVar(level.do_snipers_only);
+
+    if(Is_True(level.do_snipers_only)) {
+        level.loadoutkillstreaksenabled = 0;
+    } else {
+        level.loadoutkillstreaksenabled = 1;
+    }
+}
+
+ToggleNoSnipers() {
+    if(Is_True(level.do_snipers_only)) return level S("Turn Off Snipers Only first");
+    level.do_no_snipers = BoolVar(level.do_no_snipers);
+}
+
+ForcePlayerRemoveSniper(player = self) {
+    if(isDefined(player.FPRS_threadRunning)) return;
+    player.FPRO_threadRunning = true;
+    wait 0.5;
+    weapon = player GetCurrentWeapon();
+    weaponclass = util::getweaponclass(weapon);
+
+    if(weaponclass == "weapon_sniper") { 
+        player iPrintLnBold("^6Pussy^7 Weapon detected!");
+        player TakeAllWeapons();
+        wait 0.5;
+        player GiveWeapon(GetWeapon("pistol_standard"));
+        player SwitchToWeaponImmediate(GetWeapon("pistol_standard"));
+    }
+
+    player.FPRO_threadRunning = undefined;
+}
+
+ForcePlayerSnipersOnly(player = self) {
+    if(isDefined(player.FPSO_threadRunning)) return;
+    player.FPSO_threadRunning = true;
+    wait 0.5;
+    weapon = player GetCurrentWeapon();
+    weaponclass = util::getweaponclass(weapon);
+    level.QSWeapon1="sniper_fastbolt";
+    
+    if(weaponclass != "weapon_sniper") {
+        player TakeAllWeapons();
+        wait .5;
+        player GiveWeapon(GetWeapon(level.QSWeapon1), self CalcWeaponOptions( 12, 1, 0), 0 );
+        player SwitchToWeaponImmediate(GetWeapon(level.QSWeapon1));
+        wait .05;
+        player.maxhealth = 30;
+        player.health = self.maxhealth;
+        player AllowMelee(false);
+    }
+
+    player.FPSO_threadRunning = undefined;
 }

@@ -6,7 +6,7 @@
         {
             "label": "inject",
             "type": "shell",
-            "command": "C:\\t7Compiler\\DebugCompiler.exe",
+            "command": "C:\\T7Compiler_Cids\\DebugCompiler.exe",
             "args": [
                 "--build"
             ],

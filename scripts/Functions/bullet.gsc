@@ -87,13 +87,16 @@ PopulateBulletMenu(menu, player)
 
 BulletProjectile(projectile, type, player)
 {
+    ResetBullet(player);
     player notify("endProjectile");
     player endon("endProjectile");
     player endon("disconnect");
+    level endon("Kill_All_Active_Threads");
 
     if(!IsDefined(player.ProjectileSpreadMultiplier))
         player.ProjectileSpreadMultiplier = 1;
     
+
     while(1)
     {
         player waittill("weapon_fired");
@@ -153,6 +156,9 @@ ExplosiveBullets(player)
     {
         player endon("disconnect");
         player endon("EndExplosiveBullets");
+        level endon("Kill_All_Active_Threads");
+
+        CheckActiveThreads();
 
         while(Is_True(player.ExplosiveBullets))
         {
@@ -168,6 +174,7 @@ ExplosiveBullets(player)
     {
         player notify("EndExplosiveBullets");
         player.ExplosiveBullets = false;
+        SetThreadInactive();
     }
 }
 

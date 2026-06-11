@@ -70,8 +70,7 @@ RunMenuOptions(menu)
             break;
         
         case "Message Menu":
-        case "Miscellaneous Messages":
-        case "Advertisements Messages":
+        case "Set Message Text":
             self PopulateMessageMenu(menu);
             break;
         
@@ -104,7 +103,6 @@ RunMenuOptions(menu)
                 self addOpt("Disconnect", ::disconnect);
                 self addOpt("Player Info", ::newMenu, "Player Info");
                 self addOptBool(self.ShowOrigin, "Show Origin", ::ShowOrigin);
-                self addOptBool(level.AntiEndGame, "Anti-End Game", ::AntiEndGame);
                 self addOptBool((GetDvarString("r_showTris") == "1"), "Tris Lines", ::TrisLines);
                 self addOptBool((GetDvarString("ui_lobbyDebugVis") == "1"), "DevGui Info", ::DevGUIInfo);
                 self addOptBool((GetDvarString("r_fog") == "0"), "Disable Fog", ::DisableFog);
@@ -213,6 +211,7 @@ MenuOptionsPlayer(menu, player)
         case "Model Attachment":
         case "Malicious Options":
         case "Disable Actions":
+        case "Blame Options":
             self PopulatePlayerOptions(menu, player);
             break;
         
