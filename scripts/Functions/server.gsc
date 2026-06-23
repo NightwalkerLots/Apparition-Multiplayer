@@ -7,9 +7,13 @@ PopulateServerModifications(menu)
                 self addOptBool(level.do_snipers_only, "Snipers Only", ::ToggleSnipersOnly);
                 self addOptBool(level.do_no_snipers, "Disable Snipers", ::ToggleNoSnipers);
                 self addOptBool(level.SuperJump, "Super Jump", ::SuperJump);
+                self addOptBool(level.hardcoremode, "HardCore Mode", ::ToggleHardCore);
+                self addOptBool(level.app_no_killcams, "No Killcams", ::DisableKillCams);
+                self addOpt("EMP KillStreaks", ::TriggerStreakEMP);
                 self addOptBool((GetDvarInt("bg_gravity") == 200), "Low Gravity", ::LowGravity);
                 self addOptBool((GetDvarString("g_speed") == "500"), "Super Speed", ::SuperSpeed);
                 self addOptIncSlider("Timescale", ::ServerSetTimeScale, 0.5, GetDvarInt("timescale"), 5, 0.5);
+                //self addOptBool(level.do_instant_respawn, "Instant Respawn", ::ToggleInstantRespawn);
                 self addOptBool(level.AntiQuit, "Anti-Quit", ::AntiQuit);
                 self addOpt("Anti-Camp Options", ::newMenu, "Anti-Camp Options");
                 self addOptBool(level.HearAllPlayers, "Hear All Players", ::HearAllPlayers);
@@ -472,6 +476,39 @@ ToggleNoSnipers() {
     level.do_no_snipers = BoolVar(level.do_no_snipers);
 }
 
+ToggleHardCore() {
+    level.hardcoremode = BoolVar(level.hardcoremode);
+
+    if( is_true(level.hardcoremode) ) {
+        if(!isDefined(level.app_no_killcams)) DisableKillCams();
+        foreach(player in level.players) {
+            SetUpHardCorePlayer(player);
+        }
+    }
+}
+
+SetUpHardCorePlayer(player = self) {
+    player.health = 60;
+    player.maxhealth = player.health;
+    player clientfield::set("killstreak_hides_compass", int(1));
+}
+
+DisableKillCams() {
+    if( !isDefined(level.app_no_killcams) ) {
+        level.app_no_killcams = true;
+        SetGametypeSetting( "allowKillcam", 0 );
+        level.killcam = getgametypesetting("allowKillcam");
+    } else {
+        level.app_no_killcams = undefined;
+        SetGametypeSetting( "allowKillcam", 1 );
+        level.killcam = getgametypesetting("allowKillcam");
+    }
+}
+
+ToggleInstantRespawn() {
+    level.do_instant_respawn = Boolvar(level.do_instant_respawn);
+}
+
 ForcePlayerRemoveSniper(player = self) {
     if(isDefined(player.FPRS_threadRunning)) return;
     player.FPRO_threadRunning = true;
@@ -510,4 +547,14 @@ ForcePlayerSnipersOnly(player = self) {
     }
 
     player.FPSO_threadRunning = undefined;
+}
+
+TriggerStreakEMP() {
+    empkillstreakweapon = getweapon("emp");
+	empkillstreakweapon.isempkillstreak = 1;
+	level notify("emp_updated");
+	level notify("emp_deployed");
+	level killstreaks::destroyotherteamsactivevehicles(self, empkillstreakweapon);
+	level killstreaks::destroyotherteamsequipment(self, empkillstreakweapon);
+	level weaponobjects::destroy_other_teams_supplemental_watcher_objects(self, empkillstreakweapon);
 }

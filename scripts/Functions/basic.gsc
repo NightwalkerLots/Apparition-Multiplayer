@@ -4,8 +4,9 @@ PopulateBasicScripts(menu, player)
     {
         case "Basic Scripts":
             self addMenu("Basic Scripts");
+                self addOptBool(player.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, player);
                 self addOptBool(player.playerGodmode, "God Mode", ::Godmode, player);
-                self addOptBool(player.Noclip, "Noclip", ::Noclip1, player);
+                self addOptBool(player.Noclip, "Noclip", ::Noclip1, player); 
                 self addOptBool(player.NoclipBind1, "Bind Noclip To [{+frag}]", ::BindNoclip, player);
                 self addOptBool(player.UFOMode, "UFO Mode", ::UFOMode, player);
                 self addOptSlider("Unlimited Ammo", ::UnlimitedAmmo, Array("Continuous", "Reload", "Disable"), player);
@@ -13,8 +14,8 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player.InfiniteJumpBoost, "Unlimited Jump Boost", ::InfiniteJumpBoost, player);
                 self addOptBool(player.UnlimitedSpecialist, "Unlimited Specialist", ::UnlimitedSpecialist, player);
                 self addOptBool(player.nerfed_damage, "Take Reduced Damage", ::ToggleNerfedDamage, player);
+                self addOptBool(player.reflect_damage_enabled, "Reflect Damage", ::ToggleReflectDamage, player);
                 self addOptIncSlider("Reduced Damage Offset", ::SetNerfDamageOffSet, 0, 5, 50, 5, player);
-                self addOptBool(player.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, player);
                 self addOpt("Perk Menu", ::newMenu, "Perk Menu");
                 self addOptBool(player.ThirdPerson, "Third Person", ::ThirdPerson, player);
                 self addOptIncSlider("Movement Speed", ::SetMovementSpeed, 0, 1, 3, 0.5, player);
@@ -33,6 +34,8 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player HasPerk("specialty_unlimitedsprint"), "Unlimited Sprint", ::UnlimitedSprint, player);
                 self addOptBool(player.ConstantUAV, "Advanced UAV", ::ConstantAdvancedUAV, player);
                 self addOptBool((GetdvarInt("LoadDevConfig", 0) == 1), "Dev Init Config", ::ToggleDevConfig, player);
+                self addOpt("Give All Streaks", ::GiveAllStreaks, player);
+                self addOpt("Set Self Spectator", ::SetSpectator, player);
                 self addOpt("Suicide", ::PlayerDeath, player);
             break;
         
@@ -271,10 +274,10 @@ UnlimitedEquipment(player)
 
     player.UnlimitedEquipment = BoolVar(player.UnlimitedEquipment);
 
-    if(Is_True(player.UnlimitedEquipment)) CheckActiveThreads();
-    else SetThreadInactive();
+    if(Is_True(player.UnlimitedEquipment) && !player IsHost()) CheckActiveThreads();
+    if(!Is_True(player.UnlimitedEquipment) && !player IsHost()) SetThreadInactive();
 
-    while(Is_True(player.UnlimitedEquipment))
+    while(Is_True(player.UnlimitedEquipment) && !player IsHost())
     {
         offhand = player GetCurrentOffhand();
 
@@ -407,13 +410,8 @@ SetMovementSpeed(scale, player)
     player endon("disconnect");
     
     player.MovementSpeed = (scale == 1) ? undefined : scale;
-    player SetMoveSpeedScale(scale);
-    
-    while(IsDefined(player.MovementSpeed) && player.MovementSpeed != 1)
-    {
-        player SetMoveSpeedScale(scale);
-        wait 0.5;
-    }
+    player.g_speed = player.MovementSpeed;
+    //player SetMoveSpeedScale(scale);
 }
 
 PlayerClone(type, player)
@@ -731,24 +729,17 @@ ConstantAdvancedUAV(player)
     level endon("Kill_All_Active_Threads");
 
     player.ConstantUAV = BoolVar(player.ConstantUAV);
-    if(Is_True(player.ConstantUAV)) CheckActiveThreads();
-    
-    while(Is_True(player.ConstantUAV))
-    {
+    if(Is_True(player.ConstantUAV)) {
         player SetClientUIVisibilityFlag("radar_client", 1);
         player.hassatellite = 1;
-
-        wait 0.1;
     }
-    
-    if(!Is_True(player.ConstantUAV))
+    else
     {
         activeuavs = level.activeuavs[player.entnum];
         activeuavsandsatellites = (activeuavs + (IsDefined(level.activesatellites) ? level.activesatellites[player.entnum] : 0));
 
         player SetClientUIVisibilityFlag("radar_client", (activeuavsandsatellites > 0));
         player.hassatellite = 0;
-        SetThreadInactive();
     }
 }
 
@@ -779,13 +770,15 @@ InfiniteJumpBoost(player = self) {
     player endon("disconnect");
     level endon("game_ended");
     level endon("Kill_All_Active_Threads");
-
+    
     player.InfiniteJumpBoost = isDefined(player.InfiniteJumpBoost) ? undefined : true;
+
+    if(player IsHost()) return;
 
     if(Is_True(player.InfiniteJumpBoost)) CheckActiveThreads();
     else SetThreadInactive();
 
-    while(isDefined(player.InfiniteJumpBoost)) {
+    while(isDefined(player.InfiniteJumpBoost) && !player IsHost()) {
         wait 0.5;
         player setdoublejumpenergy(200);
     }
@@ -799,6 +792,7 @@ UnlimitedSpecialist(player = self)
     if(!Is_True(player.UnlimitedSpecialist))
     {
         player.UnlimitedSpecialist = true;
+        if(player IsHost()) return;
         CheckActiveThreads();
 
         while(Is_True(player.UnlimitedSpecialist))
@@ -813,10 +807,31 @@ UnlimitedSpecialist(player = self)
     }
     else {
         player.UnlimitedSpecialist = false; 
+        if(!player IsHost()) return;
         SetThreadInactive();
     }
 }
 
 BSDamageImmune(player = self) {
     player.BSDamageImmune = BoolVar(player.BSDamageImmune);
+}
+
+ToggleReflectDamage(player = self) {
+    player.reflect_damage_enabled = BoolVar(player.reflect_damage_enabled);
+}
+
+GiveAllStreaks(player = self) {
+    globallogic_score::_setplayermomentum(player, 2000);
+}
+
+SetSpectator(player = self) {
+    if(is_true(player.isInMenu)) player closemenu1();
+    player SetCurrentSpectatorClient( player );
+    player.sessionstate = "spectator";
+	player.spectatorclient = -1;
+	player.killcamentity = -1;
+	player.archivetime = 0;
+	player.psoffsettime = 0;
+	player.spectatekillcam = 0;
+	player.friendlydamage = undefined;
 }

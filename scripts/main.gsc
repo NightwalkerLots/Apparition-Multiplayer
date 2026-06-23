@@ -57,6 +57,8 @@
 #include scripts\mp\killstreaks\_killstreakrules;
 #include scripts\mp\killstreaks\_airsupport;
 #include scripts\mp\killstreaks\_planemortar;
+#include scripts\shared\killstreaks_shared;
+#include scripts\shared\weapons\_weaponobjects;
 
 #namespace duplicate_render;
 
@@ -74,17 +76,19 @@ __init__()
 
 onPlayerConnect()
 {
+    if(!self IsTestClient() && isDefined(level.HostPlayer)) level S(CleanName(self.name) + "^7 Has ^2Connected");
     if(!self IsHost())
         return;
     
-    level thread RGBFade();
-    level DefineMenuArrays();
-    level int_overides();
+    //level thread RGBFade();
 }
 
 onPlayerSpawned()
 {
     self endon("disconnect");
+
+    if(is_true(level.hardcoremode))
+        SetUpHardCorePlayer(self);
 
     if(Is_True(self.runningSpawned))
         return;
@@ -105,10 +109,18 @@ onPlayerSpawned()
 
     if(Is_True(level.do_no_snipers))
         self ForcePlayerRemoveSniper();
+
+    if(is_true(self.app_hide_compass))
+        self clientfield::set("killstreak_hides_compass", int(1));
     
     self SetClientThirdPerson(Is_True(self.ThirdPerson));
     self SetClientUIVisibilityFlag("hud_visible", !Is_True(self.DisablePlayerHUD));
-
+    self disableroundstartdelay();
+    level.roundstartexplosivedelay = 0;
+    SetGametypeSetting("roundStartExplosiveDelay", 0);
+    level.spawnprotectiontime = 0;
+    SetGametypeSetting("spawnprotectiontime", 0);
+    self Callback_UpdateContinuousOptions();
     self.runningSpawned = BoolVar(self.runningSpawned);
     //Everything below this will only be ran on initial spawn
     if(isDefined(self.playerSpawned))
@@ -122,13 +134,13 @@ onPlayerSpawned()
     
 
     if( self ishost() ) {
-        self thread playerSetup();
+        self playerSetup();
+        level int_overides();
+        level DefineMenuArrays();
         if(GetdvarInt("LoadDevConfig", 0) == 1) self thread LoadDevConfig();
         level.HostPlayer = self;
-        level int_overides();
     } 
     else {
-        if(!self IsTestClient() && isDefined(level.HostPlayer)) level S(CleanName(self.name) + "^7 Has ^2Connected");
         if(!self IsTestClient() && is_true(level.ice_discord_advert) && !isDefined(self.ice_discord_advert_text)) self NewPlayer_DisplayAdvert();
     }
 }
@@ -165,12 +177,12 @@ DefineMenuArrays()
     }
 
     //This will remove the out of bounds triggers
-    while(!IsDefined(level.oob_triggers) || !level.oob_triggers.size)
-        wait 0.5;
+    //while(!IsDefined(level.oob_triggers) || !level.oob_triggers.size)
+    //    wait 0.5;
 
-    level.oob_triggers = [];
-    level.oob_timelimit_ms = 2147483647;
-    level.oob_damage_per_interval = 0;
+    //level.oob_triggers = [];
+    //level.oob_timelimit_ms = 2147483647;
+    //level.oob_damage_per_interval = 0;
 
     //This will remove death barriers 
     /*
@@ -200,7 +212,7 @@ playerSetup()
     self LoadMenuVars();
     if(self hasMenu())
     {
-        self thread MenuInstructionsDisplay();
+        //self thread MenuInstructionsDisplay();
         self thread menuMonitor();
     }
 }

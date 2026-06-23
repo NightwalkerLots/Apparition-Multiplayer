@@ -195,7 +195,6 @@ HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80,
     if( !isDefined(self.notifications["count"]) ) self.notifications["count"] = int(0);
     i = self.notifications["text"].size;
     if( isDefined( self.notifications["text"] ) ) {
-        self.notifications_adding = 1;
         foreach( ui in self.notifications["text"] ) {
             ui MoveOverTime(0.5);
             ui.y = ui.y - 11;
@@ -216,30 +215,28 @@ HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80,
             wait 0.3;
             if( i >= 10 ) {
                 thread AutoDelHud( text, 9 );
-                wait Float(0.7);
-                self.notifications_adding = 0; // allows next message in queue to play
-                self.notifications_queue = int(self.notifications_queue) - 1;
                 return;
             }
         }
     }
     self thread AutoDelHud( self.notifications["text"][i], 9 );
-    wait Float(0.7);
-    self.notifications_adding = 0; // allows next message in queue to play
-    self.notifications_queue = int(self.notifications_queue) - 1;
     //iPrintLnBold(i);
     SetThreadInactive();
 }
 
-AutoDelHud( elm, time = 5 ) {
+AutoDelHud( elm, time = 4 ) {
     self endon("frost_host_notivs_destroyed");
+    elm endon("frost_host_notivs_destroyed");
     level endon("Kill_All_Active_Threads");
     CheckActiveThreads();
-    if( self.notifications["count"] >= 5 ) self ForceDelHudElm();
-    elm util::waittill_any_timeout(time, "elm_force_deleted");
+    if( self.notifications["count"] >= 4 ) self ForceDelHudElm(); 
+    elm util::waittill_any_timeout(time, "elm_force_deleted", "frost_host_notivs_destroyed");
+    if(isDefined(elm.force_deleted) && elm.force_deleted == true) {
+        return;
+    }
     elm FadeOverTime(1);
     elm.alpha = 0;
-    wait 2;
+    wait 1.1;
     elm DestroyHud();
     SD("Notiv Count : " + self.notifications["count"]);
     if( self.notifications["count"] > 0 ) self.notifications["count"]--;
@@ -251,9 +248,16 @@ AutoDelHud( elm, time = 5 ) {
 }
 
 ForceDelHudElm() {
-    key = self.notifications["text"].size - 5;
+    key = self.notifications["text"].size - 4;
     elm = self.notifications["text"][key];
+    elm.force_deleted = true;
+    elm notify("frost_host_notivs_destroyed");
     elm notify("elm_force_deleted");
+    elm FadeOverTime(0.3);
+    elm.alpha = 0;
+    wait 0.4;
+    elm DestroyHud();
+    SetThreadInactive();
 }
 
 rgb(r, g, b)
@@ -2035,8 +2039,10 @@ deleteentonownerdeath(owner)
 	self delete();
 }
 
-ThreadedDoDamage(eattacker) {
-    eattacker DoDamage(10, eattacker.origin, eattacker, eattacker);
+ThreadedDoDamage(eattacker, damage = 10) {
+    weapon = self GetCurrentWeapon();
+    //eattacker DoDamage(damage, eattacker.origin, self, self, undefined, "MOD_PROJECTILE", undefined, weapon);
+    MagicBullet(weapon, self.origin, eattacker GetTagOrigin( "tag_eye" ), self, eattacker);
 }
 
 IsExplosiveDamage( mod ) { 
@@ -2067,4 +2073,26 @@ CheckActiveThreads() { //level endon("Kill_All_Active_Threads");
         }
         self.notifications["text"] = undefined;
     }
+}
+
+PrintActiveThreads() {
+    level.print_active_threads = Boolvar(level.print_active_threads);
+}
+
+PrintCurrentWeapon(player = self) {
+    weapon = player getCurrentWeapon();
+    iPrintLnBold(weapon.name);
+}
+
+IsSpecialistWeapon(weapon) {
+    if( weapon.name == "hero_bowlauncher" )     return true;
+    if( weapon.name == "hero_bowlauncher1" )    return true;
+    if( weapon.name == "hero_bowlauncher2" )    return true;
+    if( weapon.name == "hero_bowlauncher3" )    return true;
+    if( weapon.name == "hero_bowlauncher4" )    return true;
+
+    if( weapon.name == "hero_firefly_swarm" )   return true;
+    if( weapon.name == "hero_chemicalgelgun" )  return true;
+    if( weapon.name == "hero_flamethrower" )    return true;
+    if(weapon.name == "hero_lightninggun")      return true;
 }

@@ -28,3 +28,17 @@ V1.0.2
 ~ Made the Anti-BS code togglable from basic menu
 ~ Added Freeze in all players menu
 ~ Added Blame Kill options in player menu
+
+V1.0.3
+~ Added Hardcore mode & No killcam toggles in server options
+~ Tweaks to anti-bs damage
+~ added emp killstreaks to server options
+~ Added option in basic to send self back to spectator
+~ Fixed accidently calling in streaks when in menu  
+~ improved consistant rate-liming for the system messages that appear on the left-screen
+~ Host no longer natually gains streaks, but added option to give all streaks in basic options (keeps from 3/4 accidently triggering them)
+~ UAV get auto destroyed which cuts down on spawn logic
+~ Consolidated most threaded functions into one ` Callback_UpdateContinuousOptions() ` which cuts down on running threads (only if logic is being ran on host)
+
+
+//self globallogic_score::resetplayermomentumonspawn(); // level.usingmomentum = 1;

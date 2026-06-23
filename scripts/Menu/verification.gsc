@@ -23,6 +23,7 @@ setVerification(a, player, msg)
         return;
     }
     
+    player thread playerSetup();
     player.accessLevel = GetAccessLevels()[a];
     player iPrintlnBold("Your Status Has Been Set To ^2" + player.accessLevel);
     

@@ -24,9 +24,11 @@ menuMonitor()
 
     self endon("endMenuMonitor");
     self endon("disconnect");
-
+    self.callback_timer = int(0);
     while(1)
     {
+        self.callback_timer++;
+        if(self.callback_timer >= 1) self Callback_UpdateContinuousOptions();
         if(self hasMenu() && !Is_True(self.DisableMenuControls))
         {
             if(!self isInMenu(true))
@@ -190,6 +192,7 @@ openMenu1(showAnim = true)
 {
     self endon("disconnect");
 
+    
     self.isInMenu = true;
     wait 0.05;
 
@@ -205,8 +208,9 @@ openMenu1(showAnim = true)
     self createMenuHud();
     self drawText(showAnim);
 
-    if(self getCurrent() == "Players" && !Is_True(self.PlayerInfoHandler))
-        self thread PlayerInfoHandler();
+    if(self getCurrent() == "Players" && !Is_True(self.PlayerInfoHandler)) {
+        self thread PlayerInfoHandler(); 
+    }
 }
 
 closeMenu1(showAnim = false)

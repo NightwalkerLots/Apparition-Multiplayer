@@ -25,6 +25,7 @@ PopulateWeaponry(menu, player)
 
         case "Weapon Scripts":
             self addMenu("Weapon Scripts");
+                self addOpt("Print Current Weapon", ::PrintCurrentWeapon, player);
                 self addOptBool(player.ChanceToShellShock, "Bullets Sometimes Flashbang", ::ToggleChanceToShellShock, player);
                 self addOptBool(player.max_damage, "Increased Bullet Damage", ::ToggleMaxDamage, player);
         break;

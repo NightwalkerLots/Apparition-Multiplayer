@@ -41,6 +41,8 @@ RunMenuOptions(menu)
         
         case "Quick Menu":
             self addMenu(menu);
+                self addOpt("EMP KillStreaks", ::TriggerStreakEMP);
+                self addOptBool(self.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, self);
                 self addOptBool(self.playerGodmode, "God Mode", ::Godmode, self);
                 self addOptBool(self.Noclip, "Noclip", ::Noclip1, self);
                 self addOptBool(self.NoclipBind1, "Bind Noclip To [{+frag}]", ::BindNoclip, self);
@@ -100,8 +102,8 @@ RunMenuOptions(menu)
         
         case "Host Menu":
             self addMenu("Host Menu");
-                self addOpt("Disconnect", ::disconnect);
                 self addOpt("Player Info", ::newMenu, "Player Info");
+                self addOpt("Disconnect", ::disconnect);
                 self addOptBool(self.ShowOrigin, "Show Origin", ::ShowOrigin);
                 self addOptBool((GetDvarString("r_showTris") == "1"), "Tris Lines", ::TrisLines);
                 self addOptBool((GetDvarString("ui_lobbyDebugVis") == "1"), "DevGui Info", ::DevGUIInfo);
@@ -109,6 +111,7 @@ RunMenuOptions(menu)
                 self addOptBool((GetDvarString("sv_cheats") == "1"), "SV Cheats", ::ServerCheats);
                 self addOptBool((GetDvarInt("developer") == 2), "Developer Mode", ::SetDeveloperMode);
                 self addOptBool(level.frost_sd_messages, "Debug Messages", ::ToggleDebugMessages);
+                self addOptBool(level.print_active_threads, "Print Active Threads", ::PrintActiveThreads);
             break;
         
         case "Player Info":

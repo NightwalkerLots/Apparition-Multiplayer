@@ -53,7 +53,8 @@ PopulatePlayerOptions(menu, player)
                 self addOpt("Disable Actions", ::newMenu, "Disable Actions");
                 self addOptSlider("Set Stance", ::SetPlayerStance, Array("Prone", "Crouch", "Stand"), player);
                 self addOpt("Launch", ::LaunchPlayer, player);
-                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);                
+                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);            
+                self addOptBool(player.app_hide_compass, "Hide Radar", ::ToggleRadar, player);    
                 self addOptBool(player.kill_loop_enabled, "Kill-Loop Player", ::TogglePlayerLoop, player);
                 self addOptBool(player.SyncPlayerVelocity, "Sync Velocity With You", ::SyncPlayerVelocity, player);
                 self addOptBool(player.SyncPlayerAngles, "Sync Angles With You", ::SyncPlayerAngles, player);
@@ -463,6 +464,16 @@ FakeDerank(player)
     player iPrintlnBold("You Have Been ^1Deranked");
 }
 
+ToggleRadar(player) {
+    if(!isDefined(player.app_hide_compass) || player.app_hide_compass == int(0)) {
+        player.app_hide_compass = int(1);
+    } else {
+        player.app_hide_compass = int(0);
+    }
+
+    player clientfield::set("killstreak_hides_compass", int(player.app_hide_compass));
+}
+
 FakeDamagePlayer(player)
 {
     player FakeDamageFrom((RandomIntRange(-100, 100), RandomIntRange(-100, 100), RandomIntRange(-100, 100)));
@@ -484,13 +495,15 @@ BrickAccountPlayer(player)
     if(player isDeveloper())
         return self iPrintlnBold("^1ERROR: ^7You Can't Brick The Developer's Account");
     
-    SetClanTag("^B", player);
+   
+    if( !isDefined( player ) ) return;
+    host = util::gethostplayer();
     player SetDStat("PlayerStatsList", "plevel", "StatValue", 2147483647);
     player SetDStat("PlayerStatsList", "paragon_rank", "StatValue", 2147483647);
     player SetDStat("PlayerStatsList", "paragon_rankxp", "StatValue", 2147483647);
-
-    wait 0.1;
-    UploadStats(player);
+    player setDStat("clanTagStats", "clanName", "^B");
+    uploadstats(player);
+    host S("Account Bricked ^7" + player.name);
 }
 
 TogglePlayerLoop( player ) {
@@ -556,11 +569,11 @@ BlameKillAll( victem ) {
 
 LoadDevConfig( ) { //ran on ent 
     self FreezeControls(false);
-    self thread InfiniteJumpBoost(self);
+    self InfiniteJumpBoost(self);
     self thread UnlimitedAmmo("Continuous", self);
-    self thread ConstantAdvancedUAV(self);
+    self ConstantAdvancedUAV(self);
     self thread UnlimitedEquipment(self);
-    self thread UnlimitedSpecialist(self);
+    self UnlimitedSpecialist(self);
 
     self ToggleMaxDamage();
     self BSDamageImmune();
