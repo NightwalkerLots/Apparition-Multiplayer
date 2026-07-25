@@ -8,14 +8,23 @@ PopulateMessageMenu(menu)
                 self addOpt("Display Message", ::DisplayMessage);
                 self addOptIncSlider("Center UI Font Size", ::SetMessageFontSize, 1, 1.5, 10, 0.5);
                 self addOptBool(level.customprintlnloop, "iPrintLn Loop", ::PrintlnLoop);
+                self addOptBool(self.kill_messages_enabled, "Enable Kill Messages", ::ToggleKillMessages);
                 self addOpt("Custom Message", ::Keyboard, ::DisplayMessage);
                 self addOpt("Set Message Text", ::newMenu, "Set Message Text");
+                self addOpt("Set Kill Message", ::newMenu, "Set Kill Message");
             break;
         
         case "Set Message Text":
             self addMenu("Set Message Text");
                 foreach(message in level.MenuMessageStrings) {
                     self addOpt(message, ::GetCachedCustomMessage, message);
+                }
+        break;
+
+        case "Set Kill Message":
+            self addMenu("Set Kill Message");
+                foreach(message in level.MenuMessageStrings) {
+                    self addOpt(message, ::SetKillMessage, message);
                 }
         break;
     }
@@ -48,6 +57,15 @@ GetCachedCustomMessage(message, setmessage = true) {
 
     level.CachedCustomMessage = message;
     SetDvar("saved_cached_message", message);
+}
+
+SetKillMessage(message) {
+    self.string_killmessage = message;
+    SetDvar("saved_cached_kill_message", message);
+}
+
+ToggleKillMessages(player = self) {
+    player.kill_messages_enabled = BoolVar(player.kill_messages_enabled);
 }
 
 SetMessageFontSize(val) {

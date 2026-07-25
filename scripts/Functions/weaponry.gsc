@@ -28,6 +28,8 @@ PopulateWeaponry(menu, player)
                 self addOpt("Print Current Weapon", ::PrintCurrentWeapon, player);
                 self addOptBool(player.ChanceToShellShock, "Bullets Sometimes Flashbang", ::ToggleChanceToShellShock, player);
                 self addOptBool(player.max_damage, "Increased Bullet Damage", ::ToggleMaxDamage, player);
+                self addOptBool(player.domoreheadshots, "Increased HeadShot Chance", ::DoMoreHeadShots, player);
+                self addOptBool(player.doonlyheadshots, "Only Headshot Damage", ::DoOnlyHeadShots, player);
         break;
         
         case "Weapon Camo":
@@ -283,4 +285,12 @@ ToggleMaxDamage(player = self) {
 
 ToggleChanceToShellShock(player = self) {
     player.ChanceToShellShock = isDefined(player.ChanceToShellShock) ? undefined : true;
+}
+
+DoMoreHeadShots(player = self) {
+    player.domoreheadshots = BoolVar(player.domoreheadshots);
+}
+
+DoOnlyHeadShots(player = self) {
+    player.doonlyheadshots = BoolVar(player.doonlyheadshots);
 }

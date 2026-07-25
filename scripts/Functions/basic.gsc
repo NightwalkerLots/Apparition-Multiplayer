@@ -4,7 +4,9 @@ PopulateBasicScripts(menu, player)
     {
         case "Basic Scripts":
             self addMenu("Basic Scripts");
-                self addOptBool(player.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, player);
+                self addOpt("Self Damage Patchs", ::newMenu, "Self Damage Patchs");
+                self addOpt("Perk Menu", ::newMenu, "Perk Menu");
+                self addOpt("Change Classes", ::ChangeClassesPlayer, player);
                 self addOptBool(player.playerGodmode, "God Mode", ::Godmode, player);
                 self addOptBool(player.Noclip, "Noclip", ::Noclip1, player); 
                 self addOptBool(player.NoclipBind1, "Bind Noclip To [{+frag}]", ::BindNoclip, player);
@@ -13,15 +15,10 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player.UnlimitedEquipment, "Unlimited Equipment", ::UnlimitedEquipment, player);
                 self addOptBool(player.InfiniteJumpBoost, "Unlimited Jump Boost", ::InfiniteJumpBoost, player);
                 self addOptBool(player.UnlimitedSpecialist, "Unlimited Specialist", ::UnlimitedSpecialist, player);
-                self addOptBool(player.nerfed_damage, "Take Reduced Damage", ::ToggleNerfedDamage, player);
-                self addOptBool(player.reflect_damage_enabled, "Reflect Damage", ::ToggleReflectDamage, player);
-                self addOptIncSlider("Reduced Damage Offset", ::SetNerfDamageOffSet, 0, 5, 50, 5, player);
-                self addOpt("Perk Menu", ::newMenu, "Perk Menu");
                 self addOptBool(player.ThirdPerson, "Third Person", ::ThirdPerson, player);
                 self addOptIncSlider("Movement Speed", ::SetMovementSpeed, 0, 1, 3, 0.5, player);
                 self addOptSlider("Clone", ::PlayerClone, Array("Clone", "Dead"), player);
                 self addOptBool(player.Invisibility, "Invisibility", ::Invisibility, player);
-                self addOpt("Change Classes", ::ChangeClassesPlayer, player);
 
                 if(IsDefined(level.teamBased) && level.teamBased)
                     self addOptSlider("Change Teams", ::ChangeTeamsPlayer, Array("Allies", "Axis"), player);
@@ -37,7 +34,17 @@ PopulateBasicScripts(menu, player)
                 self addOpt("Give All Streaks", ::GiveAllStreaks, player);
                 self addOpt("Set Self Spectator", ::SetSpectator, player);
                 self addOpt("Suicide", ::PlayerDeath, player);
-            break;
+        break;
+
+        case "Self Damage Patchs":
+            self addMenu("Self Damage Patchs");
+                if(player != self) self addOptBool(CheckPlayerBlockedDamage(player, self), "Block Player Damage", ::BlockPlayerDamage, player);
+                self addOptBool(player.donoheadshots, "Receive No Headshots", ::DoNoHeadShots, player);
+                self addOptBool(player.BSDamageImmune, "BS Damage Immune", ::BSDamageImmune, player);
+                self addOptBool(player.nerfed_damage, "Take Reduced Damage", ::ToggleNerfedDamage, player);
+                self addOptBool(player.reflect_damage_enabled, "Reflect Damage", ::ToggleReflectDamage, player);
+                self addOptIncSlider("Reduced Damage Offset", ::SetNerfDamageOffSet, 0, 5, 50, 5, player);
+        break;
         
         case "Perk Menu":
             self addMenu("Perk Menu");
@@ -834,4 +841,21 @@ SetSpectator(player = self) {
 	player.psoffsettime = 0;
 	player.spectatekillcam = 0;
 	player.friendlydamage = undefined;
+}
+
+DoNoHeadShots(player = self) {
+    player.donoheadshots = BoolVar(player.donoheadshots);
+}
+
+BlockPlayerDamage(player = self) {
+    xuid = player getxuid();
+    self_xuid = self getxuid();
+
+    is_true = GetDvarString("d_blocked_" + xuid + "_" + self_xuid, "undefined");
+
+    if( is_true == "undefined" ) {
+        SetDvar("d_blocked_" + xuid + "_" + self_xuid, "true");
+    } else {
+        SetDvar("d_blocked_" + xuid + "_" + self_xuid, "undefined");
+    }
 }

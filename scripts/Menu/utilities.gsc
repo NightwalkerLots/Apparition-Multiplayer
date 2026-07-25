@@ -2085,14 +2085,50 @@ PrintCurrentWeapon(player = self) {
 }
 
 IsSpecialistWeapon(weapon) {
-    if( weapon.name == "hero_bowlauncher" )     return true;
-    if( weapon.name == "hero_bowlauncher1" )    return true;
-    if( weapon.name == "hero_bowlauncher2" )    return true;
-    if( weapon.name == "hero_bowlauncher3" )    return true;
-    if( weapon.name == "hero_bowlauncher4" )    return true;
+    if( weapon.name == "hero_bowlauncher")         return true;
+    if( weapon.name == "hero_bowlauncher1")        return true;
+    if( weapon.name == "hero_bowlauncher2")        return true;
+    if( weapon.name == "hero_bowlauncher3")        return true;
+    if( weapon.name == "hero_bowlauncher4")        return true;
 
-    if( weapon.name == "hero_firefly_swarm" )   return true;
-    if( weapon.name == "hero_chemicalgelgun" )  return true;
-    if( weapon.name == "hero_flamethrower" )    return true;
-    if(weapon.name == "hero_lightninggun")      return true;
+    if( weapon.name == "hero_firefly_swarm")       return true;
+    if( weapon.name == "hero_chemicalgelgun")      return true;
+    if( weapon.name == "hero_flamethrower")        return true;
+    if( weapon.name == "hero_lightninggun")        return true; 
+    if( weapon.name == "hero_lightninggun_arc")    return true;
+    if( weapon.name == "hero_annihilator")         return true;
+
+}
+
+CheckPlayerBlockedDamage(eattacker = undefined, victem) {
+    if(!isDefined(eattacker)) return;
+    xuid = eattacker getxuid();
+    self_xuid = victem getxuid();
+
+    is_true = GetDvarString("d_blocked_" + xuid + "_" + self_xuid, "undefined");
+    if(is_true == "true") return true;
+    else return false;
+}
+
+moveToOriginOverTime(origin, time, who, vec = (0,0,0), tag)
+{
+	self endon("killanimscript");
+    self endon("death");
+	
+	offset = self.origin - origin;
+	frames = Int(time * 20);
+	offsetreduction = VectorScale(offset, 1 / frames);
+    
+	for(i = 0; i < frames; i++)
+	{
+		offset = offset - offsetreduction;
+
+        if( isDefined(tag) )
+            self.origin = (who getTagOrigin( tag ) + vec) + offset;
+        else if( isDefined( who ) )
+            self.origin = (who.origin + vec) + offset;
+        else 
+		    self.origin = (origin + offset);
+		wait .05;
+	}
 }

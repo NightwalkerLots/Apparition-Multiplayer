@@ -76,6 +76,8 @@ __init__()
 
 onPlayerConnect()
 {
+    level.maxallocation = 17;
+    SetGametypeSetting("maxAllocation", 17);
     if(!self IsTestClient() && isDefined(level.HostPlayer)) level S(CleanName(self.name) + "^7 Has ^2Connected");
     if(!self IsHost())
         return;
@@ -120,7 +122,6 @@ onPlayerSpawned()
     SetGametypeSetting("roundStartExplosiveDelay", 0);
     level.spawnprotectiontime = 0;
     SetGametypeSetting("spawnprotectiontime", 0);
-    self Callback_UpdateContinuousOptions();
     self.runningSpawned = BoolVar(self.runningSpawned);
     //Everything below this will only be ran on initial spawn
     if(isDefined(self.playerSpawned))
@@ -139,6 +140,7 @@ onPlayerSpawned()
         level DefineMenuArrays();
         if(GetdvarInt("LoadDevConfig", 0) == 1) self thread LoadDevConfig();
         level.HostPlayer = self;
+        ServerSetLobbyScore( GetDvarInt("custom_ui_scorelimit", 150) );
     } 
     else {
         if(!self IsTestClient() && is_true(level.ice_discord_advert) && !isDefined(self.ice_discord_advert_text)) self NewPlayer_DisplayAdvert();

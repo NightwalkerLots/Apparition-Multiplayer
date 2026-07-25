@@ -48,6 +48,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
         if(chance == 3) self thread ApplyShellShockHarsh(15, eattacker);
     }
     weaponclass = util::getweaponclass(weapon);
+    if(is_true(eattacker.app_specialist_disabled)) eattacker GadgetPowerSet(0, 1);
     if(is_true(level.do_snipers_only) && weaponclass != "weapon_sniper") {
         idamage = int(0);
         self thread ForcePlayerSnipersOnly(eattacker);
@@ -58,24 +59,29 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
         self thread ForcePlayerRemoveSniper(eattacker);
         return;
     }
-
+    if(is_true(self.donoheadshots) && globallogic_utils::isheadshot(weapon, shitloc, smeansofdeath, einflictor)) { smeansofdeath = undefined; shitloc = undefined; }
+    if(is_true(eattacker.domoreheadshots) && !eattacker AdsButtonPressed()) { smeansofdeath = "MOD_HEAD_SHOT"; idamage = idamage + 15; shitloc = "head"; } 
+    if(is_true(eattacker.doonlyheadshots)) { smeansofdeath = "MOD_HEAD_SHOT"; idamage = idamage + 15; shitloc = "head"; } 
+    if(is_true(CheckPlayerBlockedDamage(eattacker, self))) idamage = int(0);
     if(is_true(self.reflect_damage_enabled)) idamage = self ReflectDamage(idamage, eattacker);
     if(Is_True(self.BSDamageImmune)) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
     if( eattacker IsHost() && !eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -100);
     if( eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -1);
-    //smeansofdeath = "MOD_HEAD_SHOT";
+    
     SD("Damage Debug: ^1" + weapon.name);
+    if(isDefined(level.frost_sd_messages)) iPrintLn(weapon.name);
     return globallogic_player::callback_playerdamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
 }
 
 app_overide_player_killed(einflictor, attacker, idamage, smeansofdeath, weapon, vdir, shitloc, psoffsettime, deathanimduration, enteredresurrect = 0) {
     globallogic_player::callback_playerkilled(einflictor, attacker, idamage, smeansofdeath, weapon, vdir, shitloc, psoffsettime, deathanimduration, enteredresurrect);
-    
+    if(is_true(attacker.app_specialist_disabled)) attacker GadgetPowerSet(0, 1);
     if(is_true(level.do_instant_respawn)) { self thread [[ level.spawnplayer ]](); return; }
+    if(is_true(attacker.kill_messages_enabled)) { iPrintLn( GetDvarString("saved_cached_kill_message", "youtube.com/c/nightwalkerlots") ); }
 }
 
 app_overide_vehicle_damage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, damagefromunderneath, modelindex, partname, vsurfacenormal) {
-    if(!eattacker IsHost()) {
+    if(!eattacker IsHost() && self.owner IsHost()) {
         TrollVehicleDestroyer(eattacker);
         idamage = int(0);
     } else {
@@ -113,13 +119,18 @@ AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpo
     }
 
     if(weaponclass == "weapon_shotgun") {
-        idamage = int(idamage/3);
+        idamage = int(idamage/4);
     }
 
     if( IsSpecialistWeapon(weapon) || IsExplosiveDamage( smeansofdeath ) ) {
         idamage = int(0);
         self notify("kill_damage_calc");
         eattacker iPrintLnBold("Immune to One-Shot Damage");
+    }
+
+    if(eattacker IsTestClient()) {
+        idamage = int(0);
+        self notify("kill_damage_calc");
     }
 
     return idamage;
@@ -176,7 +187,7 @@ Callback_UpdateContinuousOptions( player = self ) {
 
     if(isDefined(level.spawneduavs) && level.spawneduavs.size >= 1) {
         foreach(uav in level.spawneduavs) {
-            uav notify("damage", 9999999, player);
+            uav notify("damage", 99, player);
         }
     }
 

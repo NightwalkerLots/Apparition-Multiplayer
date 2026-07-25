@@ -142,6 +142,11 @@ AntiQuit()
 {
     level.AntiQuit = BoolVar(level.AntiQuit);
     SetMatchFlag("disableIngameMenu", Is_True(level.AntiQuit));
+    if(Is_True(level.AntiQuit)) {
+        Setdvar("Antiquit_enabled", "true");
+    } else {
+        Setdvar("Antiquit_enabled", "false");
+    }
 }
 
 AntiCamp()
@@ -435,6 +440,7 @@ ServerSetLobbyScore(input)
 {
     level.scorelimit = input;
     SetDvar("ui_scorelimit", input);
+    SetDvar("custom_ui_scorelimit", input);
     SetGametypeSetting("scorelimit", input);
     level notify("update_scorelimit");
 }

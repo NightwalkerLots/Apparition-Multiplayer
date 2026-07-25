@@ -40,5 +40,18 @@ V1.0.3
 ~ UAV get auto destroyed which cuts down on spawn logic
 ~ Consolidated most threaded functions into one ` Callback_UpdateContinuousOptions() ` which cuts down on running threads (only if logic is being ran on host)
 
+v1.0.4
+~ Anti-BS damage now also cancels damage from bot players amongst other tweaks
+~ Added headshot scripts & immunity to headshot damage
+~ Added ability to block damage from specific players (saves between matches)
+~ Added ability to disable player's specialist
+~ Made Scorelimit save between matches
+~ Made class limit 17 by default while in match so you can use modded classes
+~ Added kill message options
 
-//self globallogic_score::resetplayermomentumonspawn(); // level.usingmomentum = 1;
+
+//self globallogic_score::resetplayermomentumonspawn(); 
+//level.usingmomentum = 1;
+// alt + num255 // ' '
+
+augest 16th - jfk birthday

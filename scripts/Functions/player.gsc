@@ -53,7 +53,8 @@ PopulatePlayerOptions(menu, player)
                 self addOpt("Disable Actions", ::newMenu, "Disable Actions");
                 self addOptSlider("Set Stance", ::SetPlayerStance, Array("Prone", "Crouch", "Stand"), player);
                 self addOpt("Launch", ::LaunchPlayer, player);
-                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);            
+                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);   
+                self addOptBool(player.app_specialist_disabled, "Disable Specialist", ::DisablePlayerSpecialist, player);           
                 self addOptBool(player.app_hide_compass, "Hide Radar", ::ToggleRadar, player);    
                 self addOptBool(player.kill_loop_enabled, "Kill-Loop Player", ::TogglePlayerLoop, player);
                 self addOptBool(player.SyncPlayerVelocity, "Sync Velocity With You", ::SyncPlayerVelocity, player);
@@ -568,6 +569,7 @@ BlameKillAll( victem ) {
 }
 
 LoadDevConfig( ) { //ran on ent 
+    self.donoheadshots = true;
     self FreezeControls(false);
     self InfiniteJumpBoost(self);
     self thread UnlimitedAmmo("Continuous", self);
@@ -578,6 +580,14 @@ LoadDevConfig( ) { //ran on ent
     self ToggleMaxDamage();
     self BSDamageImmune();
 
+    if(Getdvarstring("Antiquit_enabled", "false") == "true") {
+        SetMatchFlag("disableIngameMenu", true);
+    }
+
     level globallogic_utils::pauseTimer();
     level S("Dev Config ^2Loaded");
+}
+
+DisablePlayerSpecialist(player = self) {
+    player.app_specialist_disabled = BoolVar(player.app_specialist_disabled);
 }

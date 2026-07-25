@@ -112,6 +112,7 @@ RunMenuOptions(menu)
                 self addOptBool((GetDvarInt("developer") == 2), "Developer Mode", ::SetDeveloperMode);
                 self addOptBool(level.frost_sd_messages, "Debug Messages", ::ToggleDebugMessages);
                 self addOptBool(level.print_active_threads, "Print Active Threads", ::PrintActiveThreads);
+                self addOpt("Print Score Limit", ::S, level.scorelimit);
             break;
         
         case "Player Info":
@@ -160,6 +161,7 @@ MenuOptionsPlayer(menu, player)
         case "Basic Scripts":
         case "Perk Menu":
         case "Visual Effects":
+        case "Self Damage Patchs":
             self PopulateBasicScripts(menu, player);
             break;
         
