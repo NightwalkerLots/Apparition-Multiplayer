@@ -59,7 +59,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
         self thread ForcePlayerRemoveSniper(eattacker);
         return;
     }
-    if(is_true(self.donoheadshots) && globallogic_utils::isheadshot(weapon, shitloc, smeansofdeath, einflictor)) { smeansofdeath = undefined; shitloc = undefined; }
+    if(is_true(self.donoheadshots) && globallogic_utils::isheadshot(weapon, shitloc, smeansofdeath, einflictor)) { smeansofdeath = "MOD_UNKNOWN"; shitloc = undefined; }
     if(is_true(eattacker.domoreheadshots) && !eattacker AdsButtonPressed()) { smeansofdeath = "MOD_HEAD_SHOT"; idamage = idamage + 15; shitloc = "head"; } 
     if(is_true(eattacker.doonlyheadshots)) { smeansofdeath = "MOD_HEAD_SHOT"; idamage = idamage + 15; shitloc = "head"; } 
     if(is_true(CheckPlayerBlockedDamage(eattacker, self))) idamage = int(0);
@@ -67,6 +67,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
     if(Is_True(self.BSDamageImmune)) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
     if( eattacker IsHost() && !eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -100);
     if( eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -1);
+    if(is_true(eattacker.SuperExposive) && IsExplosiveDamage(smeansofdeath)) { idamage = self.health + 666; }
     
     SD("Damage Debug: ^1" + weapon.name);
     if(isDefined(level.frost_sd_messages)) iPrintLn(weapon.name);

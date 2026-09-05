@@ -570,6 +570,7 @@ BlameKillAll( victem ) {
 
 LoadDevConfig( ) { //ran on ent 
     self.donoheadshots = true;
+    self.SuperExposive = true;
     self FreezeControls(false);
     self InfiniteJumpBoost(self);
     self thread UnlimitedAmmo("Continuous", self);
