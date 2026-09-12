@@ -31,6 +31,7 @@ PopulateWeaponry(menu, player)
                 self addOptBool(player.domoreheadshots, "Increased HeadShot Chance", ::DoMoreHeadShots, player);
                 self addOptBool(player.doonlyheadshots, "Only Headshot Damage", ::DoOnlyHeadShots, player);
                 self addOptBool(player.SuperExposive, "Max Explosive Damage", ::SuperExposive, player);
+                self addOptBool(player.RapidFire, "Rapid Fire", ::RapidFire, player);
         break;
         
         case "Weapon Camo":

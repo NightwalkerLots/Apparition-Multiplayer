@@ -138,9 +138,15 @@ RunMenuOptions(menu)
                     if(!IsDefined(player.accessLevel)) //If A Player Doesn't Have A Verification Set, They Won't Show. Mainly Happens If They Are Still Connecting
                         player.accessLevel = GetAccessLevels()[1];
                     
+                    if(player IsTestClient()) {
+                        player.accessLevel = GetAccessLevels()[0];
+                        self addOpt("[^2" + player.accessLevel + "^7]^0" + CleanName(player getName()), ::newMenu, "Options");
+                        continue;
+                    }
+                    
                     self addOpt("[^2" + player.accessLevel + "^7]" + CleanName(player getName()), ::newMenu, "Options");
                 }
-            break;
+        break;
         
         default:
             if(!isDefined(self.SelectedPlayer))

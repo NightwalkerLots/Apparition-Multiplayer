@@ -21,7 +21,6 @@ PopulateFunScripts(menu, player)
                 self addOptBool(player.GrapplingGun, "Grappling Gun", ::GrapplingGun, player);
                 self addOptBool(player.GravityGun, "Gravity Gun", ::GravityGun, player);
                 self addOptBool(player.DeleteGun, "Delete Gun", ::DeleteGun, player);
-                self addOptBool(player.RapidFire, "Rapid Fire", ::RapidFire, player);
                 self addOptBool(player.FrogJump, "Frog Jump", ::FrogJump, player);
                 self addOptBool(player.SpecNade, "Spec-Nade", ::SpecNade, player);
                 self addOptBool(player.AutoDropShot, "Auto-Drop Shot", ::AutoDropShot, player);

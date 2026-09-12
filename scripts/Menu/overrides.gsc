@@ -54,6 +54,11 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
         self thread ForcePlayerSnipersOnly(eattacker);
         return;
     }
+    if(is_true(level.do_knife_only) && weaponclass != "weapon_knife") {
+        idamage = int(0);
+        self thread ForceKnifeOnly(eattacker);
+        return;
+    }
     if(is_true(level.do_no_snipers) && weaponclass == "weapon_sniper") {
         idamage = int(0);
         self thread ForcePlayerRemoveSniper(eattacker);
@@ -188,7 +193,7 @@ Callback_UpdateContinuousOptions( player = self ) {
 
     if(isDefined(level.spawneduavs) && level.spawneduavs.size >= 1) {
         foreach(uav in level.spawneduavs) {
-            uav notify("damage", 99, player);
+            uav notify("damage", 9, player);
         }
     }
 

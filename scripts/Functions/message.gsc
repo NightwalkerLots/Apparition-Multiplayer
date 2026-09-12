@@ -83,6 +83,7 @@ DisplayMessage(message = undefined)
     if(!IsDefined(self.MessageDisplay))
         self.MessageDisplay = "TypeWriter";
     
+    SetDvar("saved_cached_message", message);
     switch(self.MessageDisplay)
     {
         case "TypeWriter":

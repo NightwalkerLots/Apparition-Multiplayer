@@ -4,6 +4,9 @@ PopulateServerModifications(menu)
     {
         case "Server Modifications":
             self addMenu("Server Modifications");
+                self addOpt("EMP KillStreaks", ::TriggerStreakEMP);
+                self addOptBool(level.AntiQuit, "Anti-Quit", ::AntiQuit);
+                self addOptBool(level.do_knife_only, "Knife Only", ::ToggleKnifeOnly);
                 self addOptBool(level.do_snipers_only, "Snipers Only", ::ToggleSnipersOnly);
                 self addOptBool(level.do_no_snipers, "Disable Snipers", ::ToggleNoSnipers);
                 self addOptBool(level.SuperJump, "Super Jump", ::SuperJump);
@@ -14,7 +17,6 @@ PopulateServerModifications(menu)
                 self addOptBool((GetDvarString("g_speed") == "500"), "Super Speed", ::SuperSpeed);
                 self addOptIncSlider("Timescale", ::ServerSetTimeScale, 0.5, GetDvarInt("timescale"), 5, 0.5);
                 //self addOptBool(level.do_instant_respawn, "Instant Respawn", ::ToggleInstantRespawn);
-                self addOptBool(level.AntiQuit, "Anti-Quit", ::AntiQuit);
                 self addOpt("Anti-Camp Options", ::newMenu, "Anti-Camp Options");
                 self addOptBool(level.HearAllPlayers, "Hear All Players", ::HearAllPlayers);
                 self addOpt("Auto-Verification", ::newMenu, "Auto-Verification");
@@ -468,9 +470,21 @@ ServerRestart()
 
 ToggleSnipersOnly(player = self) {
     if(Is_True(level.do_no_snipers)) return level S("Turn Off Anti-Snipers first");
+    if(Is_True(level.do_knife_only)) return level S("Turn Off Knife Only first");
     level.do_snipers_only = BoolVar(level.do_snipers_only);
 
     if(Is_True(level.do_snipers_only)) {
+        level.loadoutkillstreaksenabled = 0;
+    } else {
+        level.loadoutkillstreaksenabled = 1;
+    }
+}
+
+ToggleKnifeOnly(player = self) {
+    if(Is_True(level.do_snipers_only)) return level S("Turn Off Snipers Only first");
+    level.do_knife_only = BoolVar(level.do_knife_only);
+
+    if(Is_True(level.do_knife_only)) {
         level.loadoutkillstreaksenabled = 0;
     } else {
         level.loadoutkillstreaksenabled = 1;
@@ -531,6 +545,27 @@ ForcePlayerRemoveSniper(player = self) {
     }
 
     player.FPRO_threadRunning = undefined;
+}
+
+ForceKnifeOnly(player = self) {
+    if(isDefined(player.FPSO_threadRunning)) return;
+    player.FPSO_threadRunning = true;
+    wait 0.5;
+    weapon = player GetCurrentWeapon();
+    weaponclass = util::getweaponclass(weapon);
+    level.QSWeapon1="melee_dagger";
+    
+    if(weaponclass != "weapon_knife") {
+        player TakeAllWeapons();
+        wait .5;
+        player GiveWeapon(GetWeapon(level.QSWeapon1), self CalcWeaponOptions( 12, 1, 0), 0 );
+        player SwitchToWeaponImmediate(GetWeapon(level.QSWeapon1));
+        wait .05;
+        player.maxhealth = 75;
+        player.health = self.maxhealth;
+    }
+
+    player.FPSO_threadRunning = undefined;
 }
 
 ForcePlayerSnipersOnly(player = self) {

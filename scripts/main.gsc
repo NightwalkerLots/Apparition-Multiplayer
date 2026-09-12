@@ -132,7 +132,7 @@ onPlayerSpawned()
     accessLevel = IsDefined(accessValue) ? (accessValue > 0 && accessValue < (GetAccessLevels().size - 1)) ? accessValue : 1 : 1;
 
     self.accessLevel = self isDeveloper() ? GetAccessLevels()[(GetAccessLevels().size - 1)] : self IsHost() ? GetAccessLevels()[(GetAccessLevels().size - 2)] : GetAccessLevels()[accessLevel];
-    
+    if(self IsTestClient()) self.accessLevel = GetAccessLevels()[0];
 
     if( self ishost() ) {
         self playerSetup();

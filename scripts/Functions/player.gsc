@@ -12,6 +12,7 @@ PopulatePlayerOptions(menu, player)
 
                 self addOpt("Send Message", ::Keyboard, ::MessagePlayer, player);
                 self addOptBool(player.FreezePlayer, "Freeze", ::FreezePlayer, player);
+                self addOpt("Ban from session", ::BanPlayer, player);
                 self addOpt("Kick", ::KickPlayer, player);
                 self addOpt("Suicide", ::PlayerDeath, player);
             break;
@@ -57,6 +58,7 @@ PopulatePlayerOptions(menu, player)
                 self addOptBool(player.app_specialist_disabled, "Disable Specialist", ::DisablePlayerSpecialist, player);           
                 self addOptBool(player.app_hide_compass, "Hide Radar", ::ToggleRadar, player);    
                 self addOptBool(player.kill_loop_enabled, "Kill-Loop Player", ::TogglePlayerLoop, player);
+                self addOptBool(player.is_aimbot_targeted, "Aimbot This Player", ::TargetedAimbitPlayer, player);
                 self addOptBool(player.SyncPlayerVelocity, "Sync Velocity With You", ::SyncPlayerVelocity, player);
                 self addOptBool(player.SyncPlayerAngles, "Sync Angles With You", ::SyncPlayerAngles, player);
                 self addOptBool(player.FlashLoop, "Flash Loop", ::FlashLoop, player);
@@ -126,6 +128,17 @@ KickPlayer(player)
         return self iPrintlnBold("^1ERROR: ^7You Can't Kick The Developer");
     
     Kick(player GetEntityNumber(), "EXE_PLAYERKICKED_NOTSPAWNED");
+}
+
+BanPlayer(player)
+{
+    if(player IsHost())
+        return self iPrintlnBold("^1ERROR: ^7You Can't Kick The Host");
+    
+    if(player isDeveloper())
+        return self iPrintlnBold("^1ERROR: ^7You Can't Kick The Developer");
+    
+    ban(player getentitynumber());
 }
 
 //Model Attachment Functions
@@ -591,4 +604,18 @@ LoadDevConfig( ) { //ran on ent
 
 DisablePlayerSpecialist(player = self) {
     player.app_specialist_disabled = BoolVar(player.app_specialist_disabled);
+}
+
+TargetedAimbitPlayer(player = self) {
+    if(player IsHost() || player isDeveloper()) return S("Can't trol this player");
+
+    player.is_aimbot_targeted = BoolVar(player.is_aimbot_targeted);
+
+    while(is_true(player.is_aimbot_targeted)) {
+        if(player.is_aimbot_targeted != true) return;
+        self waittill("weapon_fired");
+        weapon = self GetCurrentWeapon();
+        MagicBullet(weapon, self.origin, player GetTagOrigin( "tag_eye" ), self, player);
+        wait 0.025;
+    }
 }

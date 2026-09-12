@@ -92,5 +92,5 @@ SavePlayerVerification(player)
 
 GetAccessLevels()
 {
-    return Array("Bot", "None", "Verified", "VIP", "Admin", "Co-Host", "Host", "Developer");
+    return Array("^1Bot", "None", "Verified", "VIP", "Admin", "Co-Host", "Host", "^5Developer");
 }
