@@ -173,91 +173,111 @@ ToggleDebugMessages() {
 
 S(Message, player = self)
 {
-    if( !isplayer(self) ) { //Script ran via server and not threaded on a player
+    if(!isplayer(self)) {
         name = "^5SYSTEM ^7:";
     } else {
         name = player.name;
     }
     
     host = util::gethostplayer();
-    text = ( name + " ^7" + message );
+    text = ( name + " ^7" + Message );
 
-    if( self IsHost() ) { 
-        host thread HostHintText(text, 6, undefined, undefined, undefined, false);
+    if(self IsHost() || !isplayer(self)) { 
+        if(IsDefined(host) && IsPlayer(host))
+            host HostHintText(text);
     }
-
     else { self iPrintLnBold(Message); }
 }
 
-HostHintText(text, show_for_time = 5, font_scale = 1.1, xpos = -390, ypos = -80, rainbow = false ) {
-    CheckActiveThreads();
-    saved_message = text;
-    if( !isDefined(self.notifications["count"]) ) self.notifications["count"] = int(0);
-    i = self.notifications["text"].size;
-    if( isDefined( self.notifications["text"] ) ) {
-        foreach( ui in self.notifications["text"] ) {
-            ui MoveOverTime(0.5);
-            ui.y = ui.y - 11;
-        }
-    } else {
-        i = 0; 
-    }
-    text = self createText("default", font_scale, 1, " ", "TOPLEFT", "MIDDLE", xpos, ypos, 1, ( 1, 1, 1 ));
-    text SetTextString(saved_message);
-    self.notifications["text"][i] = text;
-    self.notifications["count"]++;
-    if( rainbow == true ) {
-        for( i = 0; i <= 10; i++ ) {
-            r = RandomIntRange(1, 255);
-            g = RandomIntRange(1, 255);
-            b = RandomIntRange(1, 255);
-            text ChangeColor( rgb( r, g, b ) );
-            wait 0.3;
-            if( i >= 10 ) {
-                thread AutoDelHud( text, 9 );
-                return;
-            }
-        }
-    }
-    self thread AutoDelHud( self.notifications["text"][i], 9 );
-    //iPrintLnBold(i);
-    SetThreadInactive();
-}
+HostHintText(text, show_for_time = 3.5, font_scale = 1.1, xpos = -390, ypos = -80, rainbow = false)
+{
+    self endon("disconnect");
 
-AutoDelHud( elm, time = 4 ) {
-    self endon("frost_host_notivs_destroyed");
-    elm endon("frost_host_notivs_destroyed");
-    level endon("Kill_All_Active_Threads");
-    CheckActiveThreads();
-    if( self.notifications["count"] >= 4 ) self ForceDelHudElm(); 
-    elm util::waittill_any_timeout(time, "elm_force_deleted", "frost_host_notivs_destroyed");
-    if(isDefined(elm.force_deleted) && elm.force_deleted == true) {
+    if(!IsDefined(self.active_notifs))
+        self.active_notifs = [];
+
+    // Filter out any dead or deleted elements
+    cleaned = [];
+    for(i = 0; i < self.active_notifs.size; i++)
+    {
+        if(IsDefined(self.active_notifs[i]))
+            cleaned[cleaned.size] = self.active_notifs[i];
+    }
+    self.active_notifs = cleaned;
+
+    // Limit visible notifications to a maximum of 4: immediately retire oldest if at cap
+    while(self.active_notifs.size >= 4)
+    {
+        oldest = self.active_notifs[0];
+        self.active_notifs = ArrayRemove(self.active_notifs, oldest);
+        if(IsDefined(oldest))
+        {
+            oldest notify("notif_retired");
+            oldest DestroyHud();
+        }
+    }
+
+    // Move existing visible notifications up smoothly to their exact slot
+    for(k = 0; k < self.active_notifs.size; k++)
+    {
+        elem = self.active_notifs[k];
+        if(IsDefined(elem))
+        {
+            targetY = ypos - ((self.active_notifs.size - k) * 13);
+            elem MoveOverTime(0.2);
+            elem.y = targetY;
+        }
+    }
+
+    // Create the new notification text element
+    textElem = self createText("default", font_scale, 1, text, "TOPLEFT", "MIDDLE", xpos, ypos, 0, (1, 1, 1));
+    if(!IsDefined(textElem))
         return;
-    }
-    elm FadeOverTime(1);
-    elm.alpha = 0;
-    wait 1.1;
-    elm DestroyHud();
-    SD("Notiv Count : " + self.notifications["count"]);
-    if( self.notifications["count"] > 0 ) self.notifications["count"]--;
-    if( self.notifications["count"] == 0 ) {
-        self.notifications["text"] = undefined;
-        SD("notification queue gone");
-    }
-    SetThreadInactive();
+
+    // Quickly fade into screen
+    textElem FadeOverTime(0.2);
+    textElem.alpha = 1;
+
+    // Add to active notifications array
+    self.active_notifs[self.active_notifs.size] = textElem;
+
+    // Thread lifetime watcher
+    self thread NotificationLifetime(textElem, show_for_time);
 }
 
-ForceDelHudElm() {
-    key = self.notifications["text"].size - 4;
-    elm = self.notifications["text"][key];
-    elm.force_deleted = true;
-    elm notify("frost_host_notivs_destroyed");
-    elm notify("elm_force_deleted");
-    elm FadeOverTime(0.3);
-    elm.alpha = 0;
-    wait 0.4;
-    elm DestroyHud();
-    SetThreadInactive();
+NotificationLifetime(textElem, duration)
+{
+    self endon("disconnect");
+    level endon("game_ended");
+    textElem endon("notif_retired");
+
+    // Remain on screen for a brief period
+    wait duration;
+
+    // Fade out
+    if(IsDefined(textElem))
+    {
+        textElem FadeOverTime(0.5);
+        textElem.alpha = 0;
+        wait 0.55;
+    }
+
+    // Destroy and remove from active list
+    if(IsDefined(textElem))
+    {
+        self.active_notifs = ArrayRemove(self.active_notifs, textElem);
+        textElem DestroyHud();
+    }
+}
+
+AutoDelHud(elm, time = 4)
+{
+    if(IsDefined(elm))
+        elm DestroyHud();
+}
+
+ForceDelHudElm()
+{
 }
 
 rgb(r, g, b)
@@ -2068,10 +2088,24 @@ CheckActiveThreads() { //level endon("Kill_All_Active_Threads");
         level.app_active_threads = int(0);
         level.HostPlayer iPrintLnBold("^1!^7 Thread Overflow Prevented ^1!^7");
 
-        foreach( ui in self.notifications["text"] ) {
-            ui DestroyHud();
+        if(IsDefined(self.active_notifs))
+        {
+            foreach(elem in self.active_notifs)
+            {
+                if(IsDefined(elem))
+                    elem DestroyHud();
+            }
+            self.active_notifs = [];
         }
-        self.notifications["text"] = undefined;
+
+        if(IsDefined(self.notifications) && IsDefined(self.notifications["text"]))
+        {
+            foreach( ui in self.notifications["text"] ) {
+                if(IsDefined(ui))
+                    ui DestroyHud();
+            }
+            self.notifications["text"] = undefined;
+        }
     }
 }
 
