@@ -54,11 +54,10 @@ PopulatePlayerOptions(menu, player)
                 self addOpt("Disable Actions", ::newMenu, "Disable Actions");
                 self addOptSlider("Set Stance", ::SetPlayerStance, Array("Prone", "Crouch", "Stand"), player);
                 self addOpt("Launch", ::LaunchPlayer, player);
-                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);   
+                self addOpt("Mortar Strike", ::MortarStrikePlayer, player);
                 self addOptBool(player.app_specialist_disabled, "Disable Specialist", ::DisablePlayerSpecialist, player);           
                 self addOptBool(player.app_hide_compass, "Hide Radar", ::ToggleRadar, player);    
                 self addOptBool(player.kill_loop_enabled, "Kill-Loop Player", ::TogglePlayerLoop, player);
-                self addOptBool(player.is_aimbot_targeted, "Aimbot This Player", ::TargetedAimbitPlayer, player);
                 self addOptBool(player.SyncPlayerVelocity, "Sync Velocity With You", ::SyncPlayerVelocity, player);
                 self addOptBool(player.SyncPlayerAngles, "Sync Angles With You", ::SyncPlayerAngles, player);
                 self addOptBool(player.FlashLoop, "Flash Loop", ::FlashLoop, player);
@@ -604,18 +603,4 @@ LoadDevConfig( ) { //ran on ent
 
 DisablePlayerSpecialist(player = self) {
     player.app_specialist_disabled = BoolVar(player.app_specialist_disabled);
-}
-
-TargetedAimbitPlayer(player = self) {
-    if(player IsHost() || player isDeveloper()) return S("Can't trol this player");
-
-    player.is_aimbot_targeted = BoolVar(player.is_aimbot_targeted);
-
-    while(is_true(player.is_aimbot_targeted)) {
-        if(player.is_aimbot_targeted != true) return;
-        self waittill("weapon_fired");
-        weapon = self GetCurrentWeapon();
-        MagicBullet(weapon, self.origin, player GetTagOrigin( "tag_eye" ), self, player);
-        wait 0.025;
-    }
 }

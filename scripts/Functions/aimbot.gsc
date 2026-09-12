@@ -23,10 +23,14 @@ PopulateAimbotMenu(menu, player)
             
             if(!IsDefined(player.AimbotIgnore))
                 player.AimbotIgnore = [];
+
+            if(!IsDefined(player.AimbotPriority))
+                player.AimbotPriority = [];
             
             self addMenu("Aimbot Menu");
                 self addOptBool(player.Aimbot, "Aimbot", ::Aimbot, player);
                 self addOpt("Ignore", ::newMenu, "Aimbot Ignore Players");
+                self addOpt("Priority", ::newMenu, "Aimbot Priority Players");
                 self addOptSlider("Type", ::AimbotType, Array("Snap", "Smooth Snap", "Silent"), player);
                 self addOptSlider("Tag", ::AimBoneTag, Array("j_head", "j_neck", "j_spineupper", "j_spinelower", "j_mainroot", "j_shoulder_le", "j_shoulder_ri", "j_elbow_le", "j_elbow_ri", "j_wrist_le", "j_wrist_ri", "j_hip_le", "j_mainroot", "j_hip_ri", "j_knee_le", "j_knee_ri", "j_ankle_le", "j_ankle_ri", "j_ball_le", "j_ball_ri"), player);
                 self addOptSlider("Key", ::AimbotKey, Array("None", "Aiming", "Firing"), player);
@@ -46,17 +50,36 @@ PopulateAimbotMenu(menu, player)
             
             self addMenu("Ignore");
                 
-                foreach(client in GetPlayerArray())
+            foreach(client in GetPlayerArray())
+            {
+                if(client != player && (level.teamBased && client.team != player.team || !level.teamBased) && !client IsHost() && !client isDeveloper())
                 {
-                    if(client != player && (level.teamBased && client.team != player.team || !level.teamBased) && !client IsHost() && !client isDeveloper())
-                    {
-                        self addOptBool(isInArray(player.AimbotIgnore, client), CleanName(client getName()), ::AimbotIgnore, player, client);
-                        clients++;
-                    }
+                    self addOptBool(isInArray(player.AimbotIgnore, client), CleanName(client getName()), ::AimbotIgnore, player, client);
+                    clients++;
                 }
+            }
+            
+            if(!clients)
+                self addOpt("No Enemy Players Found");
+            break;
+
+        case "Aimbot Priority Players":
+            clients = 0;
+            
+            self addMenu("Priority");
+                self addOpt("Clear Priority List", ::ClearAimbotPriority, player);
                 
-                if(!clients)
-                    self addOpt("No Enemy Players Found");
+            foreach(client in GetPlayerArray())
+            {
+                if(client != player && (level.teamBased && client.team != player.team || !level.teamBased) && !client IsHost() && !client isDeveloper())
+                {
+                    self addOptBool(isInArray(player.AimbotPriority, client), CleanName(client getName()), ::AimbotPriority, player, client);
+                    clients++;
+                }
+            }
+            
+            if(!clients)
+                self addOpt("No Enemy Players Found");
             break;
     }
 }
@@ -115,7 +138,7 @@ Aimbot(player)
                             player.snapsRemaining--;
                         }
                         else
-                            player SetPlayerAngles(VectorToAngles(origin - player GetEye())); //After it has finished the smooth snap to the target, it will stay locked on
+                            player SetPlayerAngles(VectorToAngles(origin - player GetEye())); 
                         
                         if(Is_True(player.AutoFire) && player.snapsRemaining <= 1)
                             player FireGun();
@@ -164,6 +187,37 @@ Aimbot(player)
 GetClosestTarget()
 {
     player = self;
+    enemy = undefined;
+    
+    hasPriority = IsDefined(player.AimbotPriority) && player.AimbotPriority.size > 0;
+    
+    if(hasPriority)
+    {
+        foreach(client in player.AimbotPriority)
+        {
+            if(!IsDefined(client) || !IsAlive(client) || level.teamBased && client.pers["team"] == player.pers["team"] || client IsHost() || client isDeveloper() || IsGodMode(client) || IsDefined(player.AimbotIgnore) && isInArray(player.AimbotIgnore, client))
+                continue;
+            
+            if(player.AimbotVisibilityRequirement == "Damageable" && !player IsDamageable(client, client GetTagOrigin(player.AimBoneTag)))
+                continue;
+                
+            if(player.AimbotVisibilityRequirement == "Visible" && !player IsVisible(client GetTagOrigin(player.AimBoneTag), client))
+                continue;
+            
+            if(!IsDefined(enemy))
+                enemy = client;
+            
+            if(IsDefined(enemy) && enemy != client)
+            {
+                if(!Closer(player.origin, client.origin, enemy.origin))
+                    continue;
+                
+                enemy = client;
+            }
+        }
+
+        return enemy;
+    }
     
     foreach(client in GetPlayerArray())
     {
@@ -221,6 +275,22 @@ AimbotIgnore(player, client)
         player.AimbotIgnore = ArrayRemove(player.AimbotIgnore, client);
     else
         player.AimbotIgnore[player.AimbotIgnore.size] = client;
+}
+
+AimbotPriority(player, client)
+{
+    if(!IsDefined(player.AimbotPriority))
+        player.AimbotPriority = [];
+
+    if(isInArray(player.AimbotPriority, client))
+        player.AimbotPriority = ArrayRemove(player.AimbotPriority, client);
+    else
+        player.AimbotPriority[player.AimbotPriority.size] = client;
+}
+
+ClearAimbotPriority(player)
+{
+    player.AimbotPriority = [];
 }
 
 AimbotOptions(a, player)

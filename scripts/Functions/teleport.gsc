@@ -8,7 +8,8 @@ PopulateTeleportMenu(menu, player)
                 if(IsDefined(level.spawnpoints) && level.spawnpoints.size)
                     self addOptIncSlider("Official Spawn Points", ::OfficialSpawnPoint, 0, 0, (level.spawnpoints.size - 1), 1, player);
                 
-                self addOptSlider("Teleport", ::TeleportPlayer, Array("Custom", "Crosshairs", "Sky"), player);
+                self addOpt("Select Map Location", ::TeleportToMapLocation, player);
+                self addOptSlider("Teleport", ::TeleportPlayer, Array("Crosshairs", "Sky"), player);
                 self addOptBool(player.TeleportGun, "Teleport Gun", ::TeleportGun, player);
                 self addOptBool(player.SaveAndLoad, "Save & Load Position", ::SaveAndLoad, player);
                 self addOpt("Save Current Location", ::SaveCurrentLocation, player);
@@ -36,11 +37,7 @@ TeleportPlayer(origin, player, angles)
         switch(origin)
         {
             case "Custom":
-                newOrigin = self RunCustomLocationSelection();
-                
-                if(!IsDefined(newOrigin))
-                    return;
-                break;
+                return self TeleportToMapLocation(player);
             
             case "Crosshairs":
                 newOrigin = self TraceBullet();
@@ -63,6 +60,28 @@ TeleportPlayer(origin, player, angles)
 
     if(IsDefined(angles))
         player SetPlayerAngles(angles);
+}
+
+TeleportToMapLocation(player)
+{
+    newOrigin = self RunCustomLocationSelection();
+    
+    if(!IsDefined(newOrigin))
+        return;
+
+    trace = BulletTrace(newOrigin + (0, 0, 500), newOrigin - (0, 0, 2000), 0, undefined);
+    if(trace["fraction"] < 1.0)
+        newOrigin = trace["position"] + (0, 0, 5);
+
+    player SetOrigin(newOrigin);
+
+    if(player == self)
+        self iPrintln("^2Teleported To Selected Location!");
+    else
+    {
+        self iPrintln("^2Teleported " + CleanName(player getName()) + " To Selected Location!");
+        player iPrintln("^2Teleported To Selected Location!");
+    }
 }
 
 OfficialSpawnPoint(point, player)

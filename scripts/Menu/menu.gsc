@@ -209,11 +209,13 @@ MenuOptionsPlayer(menu, player)
         case "Fun Scripts":
         case "Effect Man Options":
         case "Force Field Options":
+        case "Fireworks Options":
             self PopulateFunScripts(menu, player);
             break;
         
         case "Aimbot Menu":
         case "Aimbot Ignore Players":
+        case "Aimbot Priority Players":
             self PopulateAimbotMenu(menu, player);
             break;
         

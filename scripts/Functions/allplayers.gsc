@@ -5,6 +5,7 @@ PopulateAllPlayerOptions(menu)
         case "All Players":
             self addMenu("All Players");
                 self addOpt("Verification", ::newMenu, "All Players Verification");
+                self addOpt("Select Map Location", ::AllPlayersTeleportMapLocation);
                 self addOptSlider("Teleport", ::AllPlayersTeleport, Array("Self", "Crosshairs", "Sky"));
                 self addOpt("Profile Management", ::newMenu, "All Players Profile Management");
                 self addOpt("Model Manipulation", ::newMenu, "All Players Model Manipulation");
@@ -123,6 +124,29 @@ AllPlayersTeleport(origin)
         default:
             break;
     }
+}
+
+AllPlayersTeleportMapLocation()
+{
+    newOrigin = self RunCustomLocationSelection();
+    if(!IsDefined(newOrigin))
+        return;
+
+    trace = BulletTrace(newOrigin + (0, 0, 500), newOrigin - (0, 0, 2000), 0, undefined);
+    if(trace["fraction"] < 1.0)
+        newOrigin = trace["position"] + (0, 0, 5);
+
+    count = 0;
+    foreach(player in level.players)
+    {
+        if(!player IsHost() && !player isDeveloper() && player != self)
+        {
+            player SetOrigin(newOrigin);
+            count++;
+        }
+    }
+
+    self iPrintln("^2Teleported " + count + " Players To Selected Location!");
 }
 
 AllClientsGodModeCheck()

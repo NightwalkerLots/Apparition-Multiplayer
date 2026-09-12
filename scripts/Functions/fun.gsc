@@ -6,6 +6,7 @@ PopulateFunScripts(menu, player)
             self addMenu("Fun Scripts");
                 self addOpt("Effect Man Options", ::newMenu, "Effect Man Options");
                 self addOpt("Force Field Options", ::newMenu, "Force Field Options");
+                self addOpt("Fireworks Options", ::newMenu, "Fireworks Options");
                 self addOptSlider("Human Fountain", ::HumanFountain, Array("Disable", "Gore", "Water", "Smoke"), player);
                 self addOpt("Mortar Strike", ::MortarStrike, player);
                 self addOpt("Adventure Time", ::AdventureTime, player);
@@ -51,6 +52,27 @@ PopulateFunScripts(menu, player)
                 self addOptBool(player.ForceField, "Force Field", ::ForceField, player);
                 self addOptIncSlider("Force Field Size", ::ForceFieldSize, 250, player.ForceFieldSize, 500, 25, player);
                 self addOptSlider("Force Field Action", ::ForceFieldAction, Array("Kill", "Push"), player);
+            break;
+
+        case "Fireworks Options":
+            if(!IsDefined(player.FireworksHeight))
+                player.FireworksHeight = 850;
+            
+            if(!IsDefined(player.FireworksDensity))
+                player.FireworksDensity = 6;
+            
+            if(!IsDefined(player.FireworksSpeed))
+                player.FireworksSpeed = "Medium";
+            
+            self addMenu("Fireworks Options");
+                self addOptBool(player.FireworksShow, "Fireworks Show", ::ToggleFireworksShow, player);
+                self addOpt("Grand Finale", ::LaunchFireworksFinale, player);
+                self addOptBool(player.FireworksGun, "Fireworks Gun", ::ToggleFireworksGun, player);
+                self addOpt("Crosshair Fireworks", ::LaunchCrosshairFireworks, player);
+                self addOpt("Select Location Fireworks", ::LaunchLocationFireworks, player);
+                self addOptIncSlider("Burst Height", ::SetFireworksHeight, 400, player.FireworksHeight, 1500, 100, player);
+                self addOptIncSlider("Burst Density", ::SetFireworksDensity, 3, player.FireworksDensity, 10, 1, player);
+                self addOptSlider("Show Speed", ::SetFireworksSpeed, Array("Slow", "Medium", "Fast"), player);
             break;
     }
 }
@@ -976,4 +998,289 @@ SpecNade(player)
     {
         player notify("EndSpecNade");
     }
+}
+
+/*
+    ================================================
+    Fireworks System
+    ================================================
+*/
+
+ToggleFireworksShow(player)
+{
+    player endon("disconnect");
+    player.FireworksShow = BoolVar(player.FireworksShow);
+
+    if(Is_True(player.FireworksShow))
+    {
+        player notify("EndFireworksShow");
+        player endon("EndFireworksShow");
+
+        player iPrintlnBold("^2Fireworks Show: ^7Started");
+
+        while(Is_True(player.FireworksShow))
+        {
+            if(IsAlive(player))
+            {
+                offsetX = RandomFloatRange(-800, 800);
+                offsetY = RandomFloatRange(-800, 800);
+                groundGuess = player.origin + (offsetX, offsetY, 100);
+                trace = BulletTrace(groundGuess, groundGuess - (0, 0, 1000), 0, undefined);
+                launchPos = trace["position"];
+
+                height = player.FireworksHeight + RandomIntRange(-120, 180);
+                density = player.FireworksDensity;
+
+                level thread LaunchSingleFirework(launchPos, height, density, player);
+
+                delay = 1.0;
+                if(IsDefined(player.FireworksSpeed))
+                {
+                    switch(player.FireworksSpeed)
+                    {
+                        case "Slow":
+                            delay = RandomFloatRange(1.4, 2.2);
+                            break;
+                        case "Medium":
+                            delay = RandomFloatRange(0.7, 1.3);
+                            break;
+                        case "Fast":
+                            delay = RandomFloatRange(0.35, 0.6);
+                            break;
+                    }
+                }
+                wait delay;
+            }
+            else
+                wait 1;
+        }
+    }
+    else
+    {
+        player notify("EndFireworksShow");
+        player iPrintlnBold("^1Fireworks Show: ^7Stopped");
+    }
+}
+
+LaunchFireworksFinale(player)
+{
+    player endon("disconnect");
+
+    if(Is_True(player.FireworksFinaleActive))
+        return player iPrintlnBold("^1ERROR: ^7Finale already running!");
+
+    player.FireworksFinaleActive = true;
+    player iPrintlnBold("^3GRAND FIREWORKS FINALE!");
+
+    baseOrigin = player.origin;
+    totalRockets = 26;
+
+    for(i = 0; i < totalRockets; i++)
+    {
+        if(!IsAlive(player))
+            break;
+
+        offsetX = RandomFloatRange(-900, 900);
+        offsetY = RandomFloatRange(-900, 900);
+        groundGuess = baseOrigin + (offsetX, offsetY, 100);
+        trace = BulletTrace(groundGuess, groundGuess - (0, 0, 1000), 0, undefined);
+        launchPos = trace["position"];
+
+        height = player.FireworksHeight + RandomIntRange(-150, 200);
+        density = (i > 18) ? (player.FireworksDensity + 2) : player.FireworksDensity;
+
+        level thread LaunchSingleFirework(launchPos, height, density, player);
+
+        speedRatio = 1.0 - (i / totalRockets);
+        wait (0.12 + (speedRatio * 0.35));
+    }
+
+    for(k = 0; k < 4; k++)
+    {
+        angle = k * 90;
+        dir = AnglesToForward((0, angle, 0));
+        launchPos = baseOrigin + (dir * 350);
+        trace = BulletTrace(launchPos + (0, 0, 100), launchPos - (0, 0, 1000), 0, undefined);
+        level thread LaunchSingleFirework(trace["position"], player.FireworksHeight + 150, player.FireworksDensity + 3, player);
+    }
+
+    wait 2.5;
+    player.FireworksFinaleActive = false;
+    player iPrintlnBold("^2Grand Finale Complete!");
+}
+
+ToggleFireworksGun(player)
+{
+    player endon("disconnect");
+    player.FireworksGun = BoolVar(player.FireworksGun);
+
+    if(Is_True(player.FireworksGun))
+    {
+        player notify("EndFireworksGun");
+        player endon("EndFireworksGun");
+
+        player iPrintlnBold("^2Fireworks Gun: ^7Enabled");
+
+        while(Is_True(player.FireworksGun))
+        {
+            player waittill("weapon_fired");
+
+            if(!IsAlive(player))
+                continue;
+
+            start = player GetWeaponMuzzlePoint();
+            if(!IsDefined(start) || !IsVec(start))
+                start = player GetEye();
+
+            forward = AnglesToForward(player GetPlayerAngles());
+            trace = BulletTrace(start, start + VectorScale(forward, 6000), 0, player);
+            hitPos = trace["position"];
+
+            level thread LaunchFireworkFromGun(start, hitPos, player.FireworksDensity, player);
+            wait 0.05;
+        }
+    }
+    else
+    {
+        player notify("EndFireworksGun");
+        player iPrintlnBold("^1Fireworks Gun: ^7Disabled");
+    }
+}
+
+LaunchFireworkFromGun(startPos, targetPos, density, player)
+{
+    weapon = GetWeapon("hunter_rocket_turret_player");
+    if(!IsDefined(weapon) || weapon.name == "none")
+        weapon = GetWeapon("launcher_standard");
+
+    MagicBullet(weapon, startPos, targetPos, player);
+
+    dist = Distance(startPos, targetPos);
+    flightTime = dist / 2200;
+    if(flightTime < 0.1) flightTime = 0.1;
+    if(flightTime > 1.8) flightTime = 1.8;
+
+    wait flightTime;
+
+    Earthquake(0.35, 0.5, targetPos, 1200);
+    PlayFX(level._effect["rcbombexplosion"], targetPos);
+
+    if(IsDefined(level.menuFX) && level.menuFX.size > 0)
+    {
+        randomFx = level.menuFX[RandomInt(level.menuFX.size)];
+        if(IsDefined(level._effect[randomFx]))
+            PlayFX(level._effect[randomFx], targetPos);
+    }
+
+    flak = GetWeapon("flak_drone_rocket");
+    if(!IsDefined(flak) || flak.name == "none")
+        flak = weapon;
+
+    for(i = 0; i < density; i++)
+    {
+        yaw = (i * (360 / density)) + RandomFloatRange(-15, 15);
+        pitch = RandomFloatRange(10, 60);
+        dir = (Cos(yaw) * Cos(pitch), Sin(yaw) * Cos(pitch), Sin(pitch));
+        starTarget = targetPos + (dir * RandomFloatRange(250, 400));
+        MagicBullet(flak, targetPos, starTarget, player);
+    }
+}
+
+LaunchCrosshairFireworks(player)
+{
+    hitPos = player TraceBullet();
+    if(!IsDefined(hitPos))
+        return;
+
+    player iPrintln("^2Launching Crosshair Fireworks!");
+
+    for(i = 0; i < 3; i++)
+    {
+        offset = (RandomFloatRange(-100, 100), RandomFloatRange(-100, 100), 0);
+        level thread LaunchSingleFirework(hitPos + offset, player.FireworksHeight, player.FireworksDensity, player);
+        wait 0.25;
+    }
+}
+
+LaunchLocationFireworks(player)
+{
+    newOrigin = self RunCustomLocationSelection();
+    if(!IsDefined(newOrigin))
+        return;
+
+    player iPrintlnBold("^2Firing Fireworks at Selected Location!");
+
+    for(i = 0; i < 5; i++)
+    {
+        offset = (RandomFloatRange(-150, 150), RandomFloatRange(-150, 150), 0);
+        level thread LaunchSingleFirework(newOrigin + offset, player.FireworksHeight, player.FireworksDensity, player);
+        wait 0.3;
+    }
+}
+
+LaunchSingleFirework(launchOrigin, targetHeight, density, player)
+{
+    apexTarget = launchOrigin + (RandomFloatRange(-80, 80), RandomFloatRange(-80, 80), targetHeight);
+    trace = BulletTrace(launchOrigin + (0, 0, 30), apexTarget, 0, undefined);
+    if(trace["fraction"] < 1.0)
+    {
+        apexZ = launchOrigin[2] + ((targetHeight * trace["fraction"]) - 40);
+        if(apexZ < launchOrigin[2] + 250)
+            apexZ = launchOrigin[2] + 250;
+        apex = (launchOrigin[0], launchOrigin[1], apexZ);
+    }
+    else
+        apex = apexTarget;
+
+    weapon = GetWeapon("hunter_rocket_turret_player");
+    if(!IsDefined(weapon) || weapon.name == "none")
+        weapon = GetWeapon("launcher_standard");
+
+    launchPos = launchOrigin + (0, 0, 10);
+    MagicBullet(weapon, launchPos, apex, player);
+
+    dist = Distance(launchPos, apex);
+    flightTime = dist / 1100;
+    if(flightTime < 0.25) flightTime = 0.25;
+    if(flightTime > 1.6) flightTime = 1.6;
+
+    wait flightTime;
+
+    Earthquake(0.35, 0.6, apex, 1500);
+    PlayFX(level._effect["rcbombexplosion"], apex);
+
+    if(IsDefined(level.menuFX) && level.menuFX.size > 0)
+    {
+        randomFx = level.menuFX[RandomInt(level.menuFX.size)];
+        if(IsDefined(level._effect[randomFx]))
+            PlayFX(level._effect[randomFx], apex);
+    }
+
+    flak = GetWeapon("flak_drone_rocket");
+    if(!IsDefined(flak) || flak.name == "none")
+        flak = weapon;
+
+    for(i = 0; i < density; i++)
+    {
+        yaw = (i * (360 / density)) + RandomFloatRange(-15, 15);
+        pitch = RandomFloatRange(10, 60);
+        dir = (Cos(yaw) * Cos(pitch), Sin(yaw) * Cos(pitch), Sin(pitch));
+        starTarget = apex + (dir * RandomFloatRange(250, 450));
+        MagicBullet(flak, apex, starTarget, player);
+    }
+}
+
+SetFireworksHeight(num, player)
+{
+    player.FireworksHeight = num;
+}
+
+SetFireworksDensity(num, player)
+{
+    player.FireworksDensity = num;
+}
+
+SetFireworksSpeed(val, player)
+{
+    player.FireworksSpeed = val;
 }
