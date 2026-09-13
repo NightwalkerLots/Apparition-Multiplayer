@@ -12,6 +12,7 @@ PopulateFunScripts(menu, player)
                 self addOpt("Adventure Time", ::AdventureTime, player);
                 self addOpt("Earthquake", ::SendEarthquake, player);
                 self addOptBool(player.Jetpack, "Jetpack", ::Jetpack, player);
+                self addOptBool(player.grab_players, "Grab Players", ::GrabPlayers, player);
                 self addOptBool(player.LightProtector, "Light Protector", ::LightProtector, player);
                 self addOptBool(player.DeadOpsView, "Dead Ops View", ::DeadOpsView, player);
                 self addOptBool(player.DropCamera, "Drop Camera", ::PlayerDropCamera, player);
@@ -558,7 +559,6 @@ ClusterGrenades(player)
         while(Is_True(player.ClusterGrenades))
         {
             player waittill("grenade_fire", grenade, weapon);
-            
             if(!IsDefined(grenade) || !IsDefined(weapon) || IsInvalidEquipmentEffects(weapon, "Explosion"))
                 continue;
             
@@ -1181,7 +1181,7 @@ LaunchFireworkFromGun(startPos, targetPos, density, player)
         yaw = (i * (360 / density)) + RandomFloatRange(-15, 15);
         pitch = RandomFloatRange(10, 60);
         dir = (Cos(yaw) * Cos(pitch), Sin(yaw) * Cos(pitch), Sin(pitch));
-        starTarget = targetPos + (dir * RandomFloatRange(250, 400));
+        starTarget = targetPos + (dir * RandomFloatRange(250, 450));
         MagicBullet(flak, targetPos, starTarget, player);
     }
 }

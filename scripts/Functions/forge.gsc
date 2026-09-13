@@ -262,3 +262,98 @@ ForgeShootModel()
         self notify("EndShootModel");
     }
 }
+
+release_grab_player()
+{
+    if(!isDefined(self.grabbed_player))
+        return;
+
+    if(isDefined(self.grabbed_player.grabbed_by) && self.grabbed_player.grabbed_by == self)
+        self.grabbed_player.grabbed_by = undefined;
+
+    self.grabbed_player = undefined;
+    self.grab_anchor = undefined;
+}
+
+GrabPlayers()
+{
+    if(!isDefined(self.grab_players))
+    {
+        self.grab_players = true;
+        self thread GrabPlayersLoop();
+        S("Grab Players ^2Enabled");
+        self iPrintLnBold("Hold ^3ADS ^7to grab the closest player in front of you.\nRelease ^3ADS ^7to drop them.");
+        return;
+    }
+
+    self.grab_players = undefined;
+    self notify("stop_grab_players");
+    self release_grab_player();
+    S("Grab Players ^1Disabled");
+}
+
+GrabPlayersLoop()
+{
+    self endon("disconnect");
+    self endon("stop_grab_players");
+
+    while(isDefined(self.grab_players))
+    {
+        if(self adsbuttonpressed())
+        {
+            if(!isDefined(self.grabbed_player) || !isAlive(self.grabbed_player) || self.grabbed_player.sessionstate != "playing")
+            {
+                self.grabbed_player = undefined;
+                if(!isDefined(aim_range))
+                    aim_range = 180;
+
+                aim_origin = self GetEye() + VectorScale(AnglesToForward(self GetPlayerAngles()), aim_range);
+                closest_player = undefined;
+                closest_distance = 999999;
+
+                players = GetPlayers();
+                for(i = 0; i < players.size; i++)
+                {
+                    player = players[i];
+                    if(!isDefined(player) || player == self || !isAlive(player) || player.sessionstate != "playing")
+                        continue;
+
+                    distance = Distance(player GetEye(), aim_origin);
+                    if(distance < closest_distance)
+                    {
+                        closest_distance = distance;
+                        closest_player = player;
+                    }
+                }
+
+                if(isDefined(closest_player) && closest_distance <= 220)
+                {
+                    self.grabbed_player = closest_player;
+                    self.grabbed_player.grabbed_by = self;
+                } else {
+                    aim_range += 50;
+                }
+            }
+            else
+            {
+                aim_dir = AnglesToForward(self GetPlayerAngles());
+                new_origin = self GetEye() + VectorScale(aim_dir, 200);
+
+                self.grabbed_player SetOrigin(new_origin);
+                self.grabbed_player.origin = new_origin;
+                self.grabbed_player SetVelocity((0, 0, 0));
+            }
+        }
+        else if(isDefined(self.grabbed_player))
+        {
+            self release_grab_player();
+        }
+        else {
+            aim_range = 180;
+        }
+
+        wait .05;
+    }
+
+    self release_grab_player();
+}

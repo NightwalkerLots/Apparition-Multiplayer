@@ -217,7 +217,6 @@ HostHintText(text, show_for_time = 3.5, font_scale = 1.1, xpos = -390, ypos = -8
         }
     }
 
-    // Move existing visible notifications up smoothly to their exact slot
     for(k = 0; k < self.active_notifs.size; k++)
     {
         elem = self.active_notifs[k];
@@ -229,19 +228,15 @@ HostHintText(text, show_for_time = 3.5, font_scale = 1.1, xpos = -390, ypos = -8
         }
     }
 
-    // Create the new notification text element
     textElem = self createText("default", font_scale, 1, text, "TOPLEFT", "MIDDLE", xpos, ypos, 0, (1, 1, 1));
     if(!IsDefined(textElem))
         return;
 
-    // Quickly fade into screen
     textElem FadeOverTime(0.2);
     textElem.alpha = 1;
 
-    // Add to active notifications array
     self.active_notifs[self.active_notifs.size] = textElem;
 
-    // Thread lifetime watcher
     self thread NotificationLifetime(textElem, show_for_time);
 }
 
@@ -251,7 +246,6 @@ NotificationLifetime(textElem, duration)
     level endon("game_ended");
     textElem endon("notif_retired");
 
-    // Remain on screen for a brief period
     wait duration;
 
     // Fade out
@@ -262,7 +256,6 @@ NotificationLifetime(textElem, duration)
         wait 0.55;
     }
 
-    // Destroy and remove from active list
     if(IsDefined(textElem))
     {
         self.active_notifs = ArrayRemove(self.active_notifs, textElem);
