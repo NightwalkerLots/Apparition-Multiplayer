@@ -11,6 +11,7 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player.Noclip, "Noclip", ::Noclip1, player); 
                 self addOptBool(player.NoclipBind1, "Bind Noclip To [{+frag}]", ::BindNoclip, player);
                 self addOptBool(player.UFOMode, "UFO Mode", ::UFOMode, player);
+                self addOptBool(player.ActiveCamoEnabled, "Unlimited Active Camo", ::SetPlayerActiveCamo, player);
                 self addOptSlider("Unlimited Ammo", ::UnlimitedAmmo, Array("Continuous", "Reload", "Disable"), player);
                 self addOptBool(player.UnlimitedEquipment, "Unlimited Equipment", ::UnlimitedEquipment, player);
                 self addOptBool(player.InfiniteJumpBoost, "Unlimited Jump Boost", ::InfiniteJumpBoost, player);

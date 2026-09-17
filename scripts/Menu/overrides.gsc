@@ -174,6 +174,8 @@ Callback_UpdateContinuousOptions( player = self ) {
             player GadgetPowerSet(0, 100);
     }
 
+    if(is_true(player.ActiveCamoEnabled)) { player clientfield::set("camo_shader", 1); }
+
     if(IsDefined(player.MovementSpeed) && player.MovementSpeed != 1)
         player SetMoveSpeedScale(player.MovementSpeed);
     

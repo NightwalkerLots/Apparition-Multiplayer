@@ -1284,3 +1284,209 @@ SetFireworksSpeed(val, player)
 {
     player.FireworksSpeed = val;
 }
+
+/*
+    Drivable Car 
+*/
+
+toggle_drivable_car( player = self, enabled )
+{
+    player endon( "disconnect" );
+    
+    player.drivable_car_enabled = !isDefined( player.drivable_car_enabled ) || !player.drivable_car_enabled;
+    
+    if( player.drivable_car_enabled )
+    {
+        if( isDefined( player.spawned_car ) )
+            return;
+            
+        player thread spawn_and_manage_car();
+    }
+    else
+    {
+        player notify( "drivable_car_deactivated" );
+        player cleanup_drivable_car();
+    }
+}
+
+spawn_and_manage_car()
+{
+    self endon( "disconnect" );
+    self endon( "drivable_car_deactivated" );
+    
+    forward = AnglesToForward( self.angles );
+    spawn_origin = self.origin + ( forward * 120 );
+    spawn_angles = ( 0, self.angles[1], 0 );
+    
+    car = Spawn( "script_model", spawn_origin );
+    car SetModel( "defaultvehicle" ); 
+    car.angles = spawn_angles;
+    self.spawned_car = car;
+    
+    self.is_driving_car = true;
+    self EnableInvulnerability();
+    self.god_mode_car = true;
+    
+    self PlayerLinkToDelta( car, "tag_driver", 1.0, 180, 180, 180, 180, 1 );
+    
+    // Store HUD array on the player entity so it can be accessed globally
+    self.hud_controls = self create_car_hud();
+    
+    move_speed = 0;
+    max_speed = 25;
+    acceleration = 1.2;
+    deceleration = 0.8;
+    turn_speed = 3.5;
+    
+    // Driving loop
+    while( isDefined( car ) && self.drivable_car_enabled )
+    {    
+        movement = self GetNormalizedMovement();
+        forward_input = movement[0];  // Forward/Back input
+        strafe_input = movement[1];   // Left/Right input
+        
+        if( forward_input > 0.2 ) // Forward
+        {
+            move_speed = Min( move_speed + acceleration, max_speed );
+        }
+        else if( forward_input < -0.2 ) // Reverse
+        {
+            move_speed = Max( move_speed - acceleration, -12 );
+        }
+        else // Friction / Coasting
+        {
+            if( move_speed > 0 )
+                move_speed = Max( 0, move_speed - deceleration );
+            else if( move_speed < 0 )
+                move_speed = Min( 0, move_speed + deceleration );
+        }
+        
+        // Steering - only turn if car is moving
+        if( Abs( move_speed ) > 0.5 )
+        {
+            steering_dir = ( move_speed < 0 ) ? -1 : 1; // Reverse steering correction
+            
+            if( strafe_input > 0.2 ) // Turn Right
+            {
+                car.angles = ( car.angles[0], car.angles[1] - ( turn_speed * steering_dir ), car.angles[2] );
+            }
+            else if( strafe_input < -0.2 ) // Turn Left
+            {
+                car.angles = ( car.angles[0], car.angles[1] + ( turn_speed * steering_dir ), car.angles[2] );
+            }
+        }
+        
+        // Apply velocity
+        if( move_speed != 0 )
+        {
+            car_forward = AnglesToForward( car.angles );
+            new_origin = car.origin + ( car_forward * move_speed );
+            car MoveTo( new_origin, 0.05 );
+        }
+        
+        // Re-enable godmode 
+        self EnableInvulnerability();
+        
+        wait 0.05;
+    }
+}
+
+create_car_hud()
+{
+    hud_elems = [];
+    
+    hud_title = NewClientHudElem( self );
+    hud_title.x = 20;
+    hud_title.y = 180;
+    hud_title.alignX = "left";
+    hud_title.alignY = "top";
+    hud_title.fontScale = 1.4;
+    hud_title.color = ( 0.2, 0.8, 1.0 );
+    hud_title SetText( "^5=== CAR CONTROLS ===" );
+    hud_elems[hud_elems.size] = hud_title;
+    
+    hud_move = NewClientHudElem( self );
+    hud_move.x = 20;
+    hud_move.y = 200;
+    hud_move.alignX = "left";
+    hud_move.alignY = "top";
+    hud_move.fontScale = 1.1;
+    hud_move SetText( "^7Drive / Reverse: ^3[{+forward}] / [{+back}]^7" );
+    hud_elems[hud_elems.size] = hud_move;
+    
+    hud_steer = NewClientHudElem( self );
+    hud_steer.x = 20;
+    hud_steer.y = 215;
+    hud_steer.alignX = "left";
+    hud_steer.alignY = "top";
+    hud_steer.fontScale = 1.1;
+    hud_steer SetText( "^7Steer Left / Right: ^3[{+moveleft}] / [{+moveright}]^7" );
+    hud_elems[hud_elems.size] = hud_steer;
+
+    return hud_elems;
+}
+
+destroy_car_hud( hud_elems )
+{
+    if( isDefined( hud_elems ) )
+    {
+        foreach( elem in hud_elems )
+        {
+            if( isDefined( elem ) )
+                elem Destroy();
+        }
+    }
+}
+
+cleanup_drivable_car()
+{
+    if( isDefined( self.hud_controls ) )
+    {
+        self destroy_car_hud( self.hud_controls );
+        self.hud_controls = undefined;
+    }
+
+    if( isDefined( self.is_driving_car ) && self.is_driving_car )
+    {
+        self Unlink();
+        
+        if( isDefined( self.god_mode_car ) && self.god_mode_car )
+        {
+            self DisableInvulnerability();
+            self.god_mode_car = undefined;
+        }
+        
+        if( isDefined( self.spawned_car ) )
+        {
+            right_offset = AnglesToRight( self.spawned_car.angles ) * 80;
+            self SetOrigin( self.spawned_car.origin + right_offset );
+        }
+        
+        self.is_driving_car = undefined;
+    }
+    
+    if( isDefined( self.spawned_car ) )
+    {
+        self.spawned_car Delete();
+        self.spawned_car = undefined;
+    }
+    
+    self.drivable_car_enabled = false;
+}
+
+SetPlayerActiveCamo(player = self)
+{
+    player endon("disconnect");
+    player.ActiveCamoEnabled = isDefined(player.ActiveCamoEnabled) ? undefined : true;
+
+    if(Is_True(player.ActiveCamoEnabled))
+    {
+        player clientfield::set("camo_shader", 1);
+        player iPrintlnBold("^2Unlimited Active Camo: ^7Enabled");
+    }
+    else
+    {
+        player clientfield::set("camo_shader", 0);
+        player iPrintlnBold("^1Unlimited Active Camo: ^7Disabled");
+    }
+}
