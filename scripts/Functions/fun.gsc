@@ -11,6 +11,7 @@ PopulateFunScripts(menu, player)
                 self addOpt("Mortar Strike", ::MortarStrike, player);
                 self addOpt("Adventure Time", ::AdventureTime, player);
                 self addOpt("Earthquake", ::SendEarthquake, player);
+                self addOptBool(player.drivable_car_enabled, "Drivablce Car", ::toggle_drivable_car, player);
                 self addOptBool(player.Jetpack, "Jetpack", ::Jetpack, player);
                 self addOptBool(player.grab_players, "Grab Players", ::GrabPlayers, player);
                 self addOptBool(player.LightProtector, "Light Protector", ::LightProtector, player);
