@@ -112,6 +112,9 @@ onPlayerSpawned()
     if(Is_True(level.do_no_snipers))
         self ForcePlayerRemoveSniper();
 
+    if(Is_True(level.do_knife_only))
+        self thread ForceKnifeOnly(self);
+
     if(is_true(self.app_hide_compass))
         self clientfield::set("killstreak_hides_compass", int(1));
     
