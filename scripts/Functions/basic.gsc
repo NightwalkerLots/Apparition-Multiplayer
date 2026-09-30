@@ -31,6 +31,7 @@ PopulateBasicScripts(menu, player)
                 self addOptBool(player HasPerk("specialty_sprintfire"), "Shoot While Sprinting", ::ShootWhileSprinting, player);
                 self addOptBool(player HasPerk("specialty_unlimitedsprint"), "Unlimited Sprint", ::UnlimitedSprint, player);
                 self addOptBool(player.ConstantUAV, "Advanced UAV", ::ConstantAdvancedUAV, player);
+                self addOptBool(player.SelfDisableKillstreaks, "Disable Killstreaks", ::SelfDisableKillstreaks, player);
                 self addOptBool((GetdvarInt("LoadDevConfig", 0) == 1), "Dev Init Config", ::ToggleDevConfig, player);
                 self addOpt("Give All Streaks", ::GiveAllStreaks, player);
                 self addOpt("Set Self Spectator", ::SetSpectator, player);
@@ -846,6 +847,10 @@ SetSpectator(player = self) {
 
 DoNoHeadShots(player = self) {
     player.donoheadshots = BoolVar(player.donoheadshots);
+}
+
+SelfDisableKillstreaks (player = self) {
+    player.SelfDisableKillstreaks = BoolVar(player.SelfDisableKillstreaks);
 }
 
 BlockPlayerDamage(player = self) {

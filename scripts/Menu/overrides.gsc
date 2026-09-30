@@ -59,7 +59,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
         self thread ForceKnifeOnly(eattacker);
         return;
     }
-    if(is_true(level.do_no_snipers) && weaponclass == "weapon_sniper") {
+    if(is_true(level.do_no_snipers) && weaponclass == "weapon_sniper") { 
         idamage = int(0);
         self thread ForcePlayerRemoveSniper(eattacker);
         return;
@@ -70,7 +70,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
     if(is_true(CheckPlayerBlockedDamage(eattacker, self))) idamage = int(0);
     if(is_true(self.reflect_damage_enabled)) idamage = self ReflectDamage(idamage, eattacker);
     if(Is_True(self.BSDamageImmune)) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
-    if( eattacker IsHost() && !eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -100);
+    if( is_true(eattacker.SelfDisableKillstreaks)) globallogic_score::_setplayermomentum(eattacker, -100);
     if( eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -1);
     if(is_true(eattacker.SuperExposive) && IsExplosiveDamage(smeansofdeath)) { idamage = self.health + 666; }
     
