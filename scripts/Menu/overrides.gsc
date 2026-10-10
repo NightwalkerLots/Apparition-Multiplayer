@@ -69,6 +69,7 @@ app_override_player_damage(einflictor, eattacker, idamage, idflags, smeansofdeat
     if(is_true(eattacker.doonlyheadshots)) { smeansofdeath = "MOD_HEAD_SHOT"; idamage = idamage + 15; shitloc = "head"; } 
     if(is_true(CheckPlayerBlockedDamage(eattacker, self))) idamage = int(0);
     if(is_true(self.reflect_damage_enabled)) idamage = self ReflectDamage(idamage, eattacker);
+    if(eattacker IsTestClient() && self IsHost()) idamage = self ReflectDamage(idamage, eattacker);
     if(Is_True(self.BSDamageImmune)) idamage = self AntiBSDamage(einflictor, eattacker, idamage, idflags, smeansofdeath, weapon, vpoint, vdir, shitloc, vdamageorigin, psoffsettime, boneindex, vsurfacenormal);
     if( is_true(eattacker.SelfDisableKillstreaks)) globallogic_score::_setplayermomentum(eattacker, -100);
     if( eattacker IsTestClient()) globallogic_score::_setplayermomentum(eattacker, -1);
