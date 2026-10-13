@@ -11,7 +11,7 @@
                 "--build"
             ],
             "group": {
-                "kind": "test",
+                "kind": "build",
                 "isDefault": true
             },
             "presentation": {
@@ -19,11 +19,12 @@
                 "panel": "dedicated",
                 "echo": false,
                 "clear": true,
-                "focus": true,
+                "focus": true
             },
             "options": {
                 "cwd": "${workspaceRoot}"
-            }
+            },
+            "problemMatcher": []
         }
     ]
 }

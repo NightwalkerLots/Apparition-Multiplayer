@@ -32,6 +32,7 @@ PopulateWeaponry(menu, player)
                 self addOptBool(player.doonlyheadshots, "Only Headshot Damage", ::DoOnlyHeadShots, player);
                 self addOptBool(player.SuperExposive, "Max Explosive Damage", ::SuperExposive, player);
                 self addOptBool(player.RapidFire, "Rapid Fire", ::RapidFire, player);
+                self addOptBool(player.InstantC4Detonator, "Instant C4 Detonator", ::InstantC4Detonator, player);
         break;
         
         case "Weapon Camo":
@@ -299,4 +300,39 @@ DoOnlyHeadShots(player = self) {
 
 SuperExposive(player = self) {
     player.SuperExposive = BoolVar(player.SuperExposive);
+}
+
+InstantC4Detonator(player = self) {
+    player.InstantC4Detonator = BoolVar(player.InstantC4Detonator);
+
+    while(Is_True(player.InstantC4Detonator)) {
+        player waittill( "grenade_fire", grenade, weapon, cookTime );
+
+        grenade thread C4DetonateWatcher(grenade, grenade.owner, weapon);
+        waittillframeend;
+    }
+}
+
+C4DetonateWatcher(c4, player, weapon) {
+    player endon( "disconnect" );
+    player endon( "game_ended" );
+    player endon( "joined_team" );
+    player endon( "disconnect_from_team" );
+    c4 endon( "death" );
+
+    if( weapon.name != "satchel_charge" ) return SD("C4 Auto-D : ^1Not C4^7");
+    
+    while(true) {
+        c4.trigger waittill("trigger", entity);
+        if(player.team == entity.team) {
+            iPrintln("Team Detected : ^1" + entity.name);
+            wait 0.025;
+            continue;
+        }
+            
+        if( isDefined( player ) && isAlive( player ) && isAlive( entity )) {
+            c4 Detonate(player);
+            SD("^2Detonated :^1" + entity.name);
+        }
+    }
 }
