@@ -321,18 +321,16 @@ C4DetonateWatcher(c4, player, weapon) {
     c4 endon( "death" );
 
     if( weapon.name != "satchel_charge" ) return SD("C4 Auto-D : ^1Not C4^7");
+    c4.proximity_deployed = 1;
+    c4.weapon.proximityalarmactivationdelay = 0;
     
-    while(true) {
-        c4.trigger waittill("trigger", entity);
-        if(player.team == entity.team) {
-            iPrintln("Team Detected : ^1" + entity.name);
-            wait 0.025;
-            continue;
-        }
-            
-        if( isDefined( player ) && isAlive( player ) && isAlive( entity )) {
+    while(isdefined(c4)) {
+        alarm_state = MakeLocalizedString(c4.owner clientfield::get_player_uimodel("hudItems.proximityAlarm"));
+        if(alarm_state == "2") {
             c4 Detonate(player);
-            SD("^2Detonated :^1" + entity.name);
+            SD("^2C4 Detonated");
+            return; 
         }
+        wait 0.25;
     }
 }
